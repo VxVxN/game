@@ -5,12 +5,14 @@ import (
 	"github.com/VxVxN/game/internal/player"
 	"github.com/VxVxN/game/internal/base"
 	"fmt"
+	"github.com/VxVxN/game/internal/eventmanager"
 )
 
 type Game struct {
-	tiles  []MapTile
-	data   GameData
-	player *player.Player
+	tiles        []MapTile
+	data         GameData
+	player       *player.Player
+	eventManager *eventmanager.EventManager
 }
 
 func NewGame() (*Game, error) {
@@ -22,15 +24,20 @@ func NewGame() (*Game, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
+
+	eventManager := eventmanager.NewEventManager(player)
+
 	game := &Game{
-		tiles:  tiles,
-		data:   NewGameData(),
-		player: player,
+		tiles:        tiles,
+		data:         NewGameData(),
+		player:       player,
+		eventManager: eventManager,
 	}
 	return game, nil
 }
 
 func (game *Game) Update() error {
+	game.eventManager.Process()
 	return nil
 }
 
@@ -45,7 +52,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(game.data.TileSize*game.player.X()), float64(game.data.TileSize*game.player.Y()))
+	op.GeoM.Translate(float64(game.data.TileSize*game.player.Position.X), float64(game.data.TileSize*game.player.Position.Y))
 	screen.DrawImage(game.player.Image(), op)
 }
 

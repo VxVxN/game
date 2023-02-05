@@ -7,7 +7,7 @@ import (
 )
 
 type Player struct {
-	position base.Position
+	Position base.Position
 	image    *ebiten.Image
 }
 
@@ -18,17 +18,9 @@ func NewPlayer(position base.Position, imagePath string) (*Player, error) {
 	}
 
 	return &Player{
-		position: position,
+		Position: position,
 		image:    image,
 	}, nil
-}
-
-func (player Player) X() int {
-	return player.position.X
-}
-
-func (player Player) Y() int {
-	return player.position.Y
 }
 
 func (player Player) Image() *ebiten.Image {
