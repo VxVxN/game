@@ -34,16 +34,16 @@ func NewGameTiles() ([]MapTile, error) {
 		for y := 0; y < gd.ScreenHeight; y++ {
 			if x == 0 || x == gd.ScreenWidth-1 || y == 0 || y == gd.ScreenHeight-1 {
 				tile := MapTile{
-					PixelX:  x * gd.TileWidth,
-					PixelY:  y * gd.TileHeight,
+					PixelX:  x * gd.TileSize,
+					PixelY:  y * gd.TileSize,
 					Blocked: true,
 					Image:   wall,
 				}
 				tiles = append(tiles, tile)
 			} else {
 				tile := MapTile{
-					PixelX:  x * gd.TileWidth,
-					PixelY:  y * gd.TileHeight,
+					PixelX:  x * gd.TileSize,
+					PixelY:  y * gd.TileSize,
 					Blocked: false,
 					Image:   floor,
 				}

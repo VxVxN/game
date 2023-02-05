@@ -1,10 +1,16 @@
 package game
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/VxVxN/game/internal/player"
+	"github.com/VxVxN/game/internal/base"
+	"fmt"
+)
 
 type Game struct {
-	tiles []MapTile
-	data  GameData
+	tiles  []MapTile
+	data   GameData
+	player *player.Player
 }
 
 func NewGame() (*Game, error) {
@@ -12,9 +18,14 @@ func NewGame() (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
+	player, err := player.NewPlayer(base.NewPosition(5, 2), "assets/player.png")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create player: %v", err)
+	}
 	game := &Game{
-		tiles: tiles,
-		data:  NewGameData(),
+		tiles:  tiles,
+		data:   NewGameData(),
+		player: player,
 	}
 	return game, nil
 }
@@ -33,6 +44,9 @@ func (game *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(tile.Image, op)
 		}
 	}
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(game.data.TileSize*game.player.X()), float64(game.data.TileSize*game.player.Y()))
+	screen.DrawImage(game.player.Image(), op)
 }
 
 func (game *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -42,16 +56,14 @@ func (game *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 type GameData struct {
 	ScreenWidth  int
 	ScreenHeight int
-	TileWidth    int
-	TileHeight   int
+	TileSize     int
 }
 
 func NewGameData() GameData {
 	g := GameData{
 		ScreenWidth:  30,
 		ScreenHeight: 30,
-		TileWidth:    32,
-		TileHeight:   32,
+		TileSize:     32,
 	}
 	return g
 }
