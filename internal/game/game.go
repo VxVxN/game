@@ -18,14 +18,22 @@ type Game struct {
 	player       *player.Player
 	eventManager *eventmanager.EventManager
 	globalTime   time.Time
+	// drawers objects that can be drawn
+	drawers []Drawer
+}
+
+type Drawer interface {
+	Draw(screen *ebiten.Image)
 }
 
 func NewGame() (*Game, error) {
-	gameMap, err := gamemap.NewMap()
+	gameData := data.NewGameData()
+
+	gameMap, err := gamemap.NewMap(&gameData)
 	if err != nil {
 		return nil, err
 	}
-	player, err := player.NewPlayer(base.NewPosition(5, 2), "assets/player.png")
+	player, err := player.NewPlayer(base.NewPosition(5, 2), "assets/player.png", &gameData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -59,12 +67,18 @@ func NewGame() (*Game, error) {
 		os.Exit(0) // todo add normal game end processing
 	})
 
+	drawers := []Drawer{
+		gameMap,
+		player,
+	}
+
 	game := &Game{
 		gameMap:      gameMap,
-		data:         data.NewGameData(),
+		data:         gameData,
 		player:       player,
 		eventManager: eventManager,
 		globalTime:   time.Now(),
+		drawers:      drawers,
 	}
 	return game, nil
 }
@@ -79,18 +93,9 @@ func (game *Game) Update() error {
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
-	//Draw the Map
-	for x := 0; x < game.data.ScreenWidth; x++ {
-		for y := 0; y < game.data.ScreenHeight; y++ {
-			tile := game.gameMap.GetTile(x, y)
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))
-			screen.DrawImage(tile.Image, op)
-		}
+	for _, drawer := range game.drawers {
+		drawer.Draw(screen)
 	}
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(game.data.TileSize*game.player.Position.X), float64(game.data.TileSize*game.player.Position.Y))
-	screen.DrawImage(game.player.Image(), op)
 }
 
 func (game *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
