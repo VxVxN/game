@@ -7,6 +7,7 @@ import (
 	"github.com/VxVxN/game/internal/player"
 	"github.com/hajimehoshi/ebiten/v2"
 	"time"
+	"os"
 )
 
 type Game struct {
@@ -27,7 +28,22 @@ func NewGame() (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	eventManager := eventmanager.NewEventManager(player)
+	eventManager := eventmanager.NewEventManager()
+	eventManager.AddEvent(ebiten.KeyUp, func() {
+		player.Move(ebiten.KeyUp)
+	})
+	eventManager.AddEvent(ebiten.KeyDown, func() {
+		player.Move(ebiten.KeyDown)
+	})
+	eventManager.AddEvent(ebiten.KeyRight, func() {
+		player.Move(ebiten.KeyRight)
+	})
+	eventManager.AddEvent(ebiten.KeyLeft, func() {
+		player.Move(ebiten.KeyLeft)
+	})
+	eventManager.AddEvent(ebiten.KeyEscape, func() {
+		os.Exit(0) // todo add normal game end processing
+	})
 
 	game := &Game{
 		tiles:        tiles,
@@ -40,10 +56,11 @@ func NewGame() (*Game, error) {
 }
 
 func (game *Game) Update() error {
-	if time.Since(game.globalTime) >= time.Second/25 {
-		game.eventManager.Process()
-		game.globalTime = time.Now()
+	if time.Since(game.globalTime) < time.Second/25 {
+		return nil
 	}
+	game.eventManager.Process()
+	game.globalTime = time.Now()
 	return nil
 }
 
@@ -62,8 +79,8 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(game.player.Image(), op)
 }
 
-func (game *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 1280, 800
+func (game *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return outsideWidth, outsideHeight
 }
 
 type GameData struct {

@@ -23,6 +23,20 @@ func NewPlayer(position base.Position, imagePath string) (*Player, error) {
 	}, nil
 }
 
-func (player Player) Image() *ebiten.Image {
+func (player *Player) Image() *ebiten.Image {
 	return player.image
+}
+
+func (player *Player) Move(key ebiten.Key) {
+	switch key {
+	case ebiten.KeyUp:
+		player.Position.Y--
+	case ebiten.KeyDown:
+		player.Position.Y++
+	case ebiten.KeyLeft:
+		player.Position.X--
+	case ebiten.KeyRight:
+		player.Position.X++
+	default:
+	}
 }

@@ -13,6 +13,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to init game: %v", err)
 	}
+	game.Layout(1280, 800)
+
 	ebiten.SetWindowTitle("Game")
 	ebiten.SetWindowSize(1680, 1050)
 	if err := ebiten.RunGame(game); err != nil {
