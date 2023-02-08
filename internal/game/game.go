@@ -1,11 +1,12 @@
 package game
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/VxVxN/game/internal/player"
-	"github.com/VxVxN/game/internal/base"
 	"fmt"
+	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/eventmanager"
+	"github.com/VxVxN/game/internal/player"
+	"github.com/hajimehoshi/ebiten/v2"
+	"time"
 )
 
 type Game struct {
@@ -13,6 +14,7 @@ type Game struct {
 	data         GameData
 	player       *player.Player
 	eventManager *eventmanager.EventManager
+	globalTime   time.Time
 }
 
 func NewGame() (*Game, error) {
@@ -32,12 +34,16 @@ func NewGame() (*Game, error) {
 		data:         NewGameData(),
 		player:       player,
 		eventManager: eventManager,
+		globalTime:   time.Now(),
 	}
 	return game, nil
 }
 
 func (game *Game) Update() error {
-	game.eventManager.Process()
+	if time.Since(game.globalTime) >= time.Second/25 {
+		game.eventManager.Process()
+		game.globalTime = time.Now()
+	}
 	return nil
 }
 
