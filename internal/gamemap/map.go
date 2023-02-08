@@ -1,10 +1,15 @@
-package game
+package gamemap
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"fmt"
+	"github.com/VxVxN/game/internal/data"
 )
+
+type Map struct {
+	tiles []MapTile
+}
 
 type MapTile struct {
 	PixelX  int
@@ -14,12 +19,12 @@ type MapTile struct {
 }
 
 func GetIndexFromXY(x int, y int) int {
-	gd := NewGameData()
+	gd := data.NewGameData()
 	return (y * gd.ScreenWidth) + x
 }
 
-func NewGameTiles() ([]MapTile, error) {
-	gd := NewGameData()
+func NewMap() (*Map, error) {
+	gd := data.NewGameData()
 	tiles := make([]MapTile, 0)
 
 	wall, _, err := ebitenutil.NewImageFromFile("assets/wall.png")
@@ -52,5 +57,14 @@ func NewGameTiles() ([]MapTile, error) {
 		}
 	}
 
-	return tiles, nil
+	return &Map{tiles: tiles}, nil
+}
+
+func (gameMap *Map) IsCanMove(x, y int) bool {
+	tile := gameMap.tiles[GetIndexFromXY(x, y)]
+	return !tile.Blocked
+}
+
+func (gameMap *Map) GetTile(x, y int) MapTile {
+	return gameMap.tiles[GetIndexFromXY(x, y)]
 }

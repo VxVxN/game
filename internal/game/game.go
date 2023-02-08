@@ -8,18 +8,20 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"time"
 	"os"
+	"github.com/VxVxN/game/internal/gamemap"
+	"github.com/VxVxN/game/internal/data"
 )
 
 type Game struct {
-	tiles        []MapTile
-	data         GameData
+	gameMap      *gamemap.Map
+	data         data.GameData
 	player       *player.Player
 	eventManager *eventmanager.EventManager
 	globalTime   time.Time
 }
 
 func NewGame() (*Game, error) {
-	tiles, err := NewGameTiles()
+	gameMap, err := gamemap.NewMap()
 	if err != nil {
 		return nil, err
 	}
@@ -30,15 +32,27 @@ func NewGame() (*Game, error) {
 
 	eventManager := eventmanager.NewEventManager()
 	eventManager.AddEvent(ebiten.KeyUp, func() {
+		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) {
+			return
+		}
 		player.Move(ebiten.KeyUp)
 	})
 	eventManager.AddEvent(ebiten.KeyDown, func() {
+		if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) {
+			return
+		}
 		player.Move(ebiten.KeyDown)
 	})
 	eventManager.AddEvent(ebiten.KeyRight, func() {
+		if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) {
+			return
+		}
 		player.Move(ebiten.KeyRight)
 	})
 	eventManager.AddEvent(ebiten.KeyLeft, func() {
+		if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) {
+			return
+		}
 		player.Move(ebiten.KeyLeft)
 	})
 	eventManager.AddEvent(ebiten.KeyEscape, func() {
@@ -46,8 +60,8 @@ func NewGame() (*Game, error) {
 	})
 
 	game := &Game{
-		tiles:        tiles,
-		data:         NewGameData(),
+		gameMap:      gameMap,
+		data:         data.NewGameData(),
 		player:       player,
 		eventManager: eventManager,
 		globalTime:   time.Now(),
@@ -68,7 +82,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	//Draw the Map
 	for x := 0; x < game.data.ScreenWidth; x++ {
 		for y := 0; y < game.data.ScreenHeight; y++ {
-			tile := game.tiles[GetIndexFromXY(x, y)]
+			tile := game.gameMap.GetTile(x, y)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))
 			screen.DrawImage(tile.Image, op)
@@ -81,19 +95,4 @@ func (game *Game) Draw(screen *ebiten.Image) {
 
 func (game *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return outsideWidth, outsideHeight
-}
-
-type GameData struct {
-	ScreenWidth  int
-	ScreenHeight int
-	TileSize     int
-}
-
-func NewGameData() GameData {
-	g := GameData{
-		ScreenWidth:  30,
-		ScreenHeight: 30,
-		TileSize:     32,
-	}
-	return g
 }
