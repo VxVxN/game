@@ -3,13 +3,13 @@ package game
 import (
 	"fmt"
 	"github.com/VxVxN/game/internal/base"
+	"github.com/VxVxN/game/internal/data"
 	"github.com/VxVxN/game/internal/eventmanager"
+	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/internal/player"
 	"github.com/hajimehoshi/ebiten/v2"
-	"time"
 	"os"
-	"github.com/VxVxN/game/internal/gamemap"
-	"github.com/VxVxN/game/internal/data"
+	"time"
 )
 
 type Game struct {
@@ -18,12 +18,6 @@ type Game struct {
 	player       *player.Player
 	eventManager *eventmanager.EventManager
 	globalTime   time.Time
-	// drawers objects that can be drawn
-	drawers []Drawer
-}
-
-type Drawer interface {
-	Draw(screen *ebiten.Image)
 }
 
 func NewGame() (*Game, error) {
@@ -33,7 +27,7 @@ func NewGame() (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	player, err := player.NewPlayer(base.NewPosition(5, 2), "assets/player.png", &gameData)
+	player, err := player.NewPlayer(base.NewPosition(1, 1), "assets/player.png", &gameData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -67,18 +61,12 @@ func NewGame() (*Game, error) {
 		os.Exit(0) // todo add normal game end processing
 	})
 
-	drawers := []Drawer{
-		gameMap,
-		player,
-	}
-
 	game := &Game{
 		gameMap:      gameMap,
 		data:         gameData,
 		player:       player,
 		eventManager: eventManager,
 		globalTime:   time.Now(),
-		drawers:      drawers,
 	}
 	return game, nil
 }
@@ -87,17 +75,24 @@ func (game *Game) Update() error {
 	if time.Since(game.globalTime) < time.Second/25 {
 		return nil
 	}
+	game.gameMap.Update()
 	game.eventManager.Process()
 	game.globalTime = time.Now()
 	return nil
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
-	for _, drawer := range game.drawers {
-		drawer.Draw(screen)
-	}
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(game.data.TileSize*-game.player.Position.X+game.data.ScreenWidthPx/2), float64(game.data.TileSize*-game.player.Position.Y+game.data.ScreenHeightPx/2))
+	screen.DrawImage(game.gameMap.Image(), op)
+
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(game.data.ScreenWidthPx/2), float64(game.data.ScreenHeightPx/2))
+	screen.DrawImage(game.player.Image(), op)
 }
 
-func (game *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return outsideWidth, outsideHeight
+func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
+	game.data.ScreenWidthPx = screenWidthPx
+	game.data.ScreenHeightPx = screenHeightPx
+	return screenWidthPx, screenHeightPx
 }

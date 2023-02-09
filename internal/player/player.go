@@ -2,9 +2,9 @@ package player
 
 import (
 	"github.com/VxVxN/game/internal/base"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/VxVxN/game/internal/data"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Player struct {
@@ -42,10 +42,4 @@ func (player *Player) Move(key ebiten.Key) {
 		player.Position.X++
 	default:
 	}
-}
-
-func (player *Player) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(player.gameData.TileSize*player.Position.X), float64(player.gameData.TileSize*player.Position.Y))
-	screen.DrawImage(player.Image(), op)
 }

@@ -1,14 +1,15 @@
 package gamemap
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"fmt"
 	"github.com/VxVxN/game/internal/data"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Map struct {
 	tiles    []MapTile
+	world    *ebiten.Image
 	gameData *data.GameData
 }
 
@@ -21,7 +22,7 @@ type MapTile struct {
 
 func GetIndexFromXY(x int, y int) int {
 	gd := data.NewGameData()
-	return (y * gd.ScreenWidth) + x
+	return (y * gd.MapWidth) + x
 }
 
 func NewMap(gameData *data.GameData) (*Map, error) {
@@ -35,9 +36,9 @@ func NewMap(gameData *data.GameData) (*Map, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to init grass image: %v", err)
 	}
-	for x := 0; x < gameData.ScreenWidth; x++ {
-		for y := 0; y < gameData.ScreenHeight; y++ {
-			if x == 0 || x == gameData.ScreenWidth-1 || y == 0 || y == gameData.ScreenHeight-1 {
+	for x := 0; x < gameData.MapWidth; x++ {
+		for y := 0; y < gameData.MapHeight; y++ {
+			if x == 0 || x == gameData.MapWidth-1 || y == 0 || y == gameData.MapHeight-1 {
 				tile := MapTile{
 					PixelX:  x * gameData.TileSize,
 					PixelY:  y * gameData.TileSize,
@@ -60,6 +61,7 @@ func NewMap(gameData *data.GameData) (*Map, error) {
 	return &Map{
 		tiles:    tiles,
 		gameData: gameData,
+		world:    ebiten.NewImage(gameData.MapWidth*gameData.TileSize, gameData.MapHeight*gameData.TileSize),
 	}, nil
 }
 
@@ -72,13 +74,17 @@ func (gameMap *Map) getTile(x, y int) MapTile {
 	return gameMap.tiles[GetIndexFromXY(x, y)]
 }
 
-func (gameMap *Map) Draw(screen *ebiten.Image) {
-	for x := 0; x < gameMap.gameData.ScreenWidth; x++ {
-		for y := 0; y < gameMap.gameData.ScreenHeight; y++ {
+func (gameMap *Map) Update() {
+	for x := 0; x < gameMap.gameData.MapWidth; x++ {
+		for y := 0; y < gameMap.gameData.MapHeight; y++ {
 			tile := gameMap.getTile(x, y)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))
-			screen.DrawImage(tile.Image, op)
+			gameMap.world.DrawImage(tile.Image, op)
 		}
 	}
+}
+
+func (gameMap *Map) Image() *ebiten.Image {
+	return gameMap.world
 }
