@@ -2,15 +2,15 @@ package gamemap
 
 import (
 	"fmt"
-	"github.com/VxVxN/game/internal/data"
+	"github.com/VxVxN/game/internal/config"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Map struct {
-	tiles    [][]MapTile
-	world    *ebiten.Image
-	gameData *data.GameData
+	tiles [][]MapTile
+	world *ebiten.Image
+	cfg   *config.Config
 }
 
 type MapTile struct {
@@ -20,8 +20,8 @@ type MapTile struct {
 	Image   *ebiten.Image
 }
 
-func NewMap(gameData *data.GameData) (*Map, error) {
-	tiles := make([][]MapTile, gameData.MapWidth)
+func NewMap(cfg *config.Config) (*Map, error) {
+	tiles := make([][]MapTile, cfg.Map.Width)
 
 	wall, _, err := ebitenutil.NewImageFromFile("assets/wall.png")
 	if err != nil {
@@ -31,14 +31,14 @@ func NewMap(gameData *data.GameData) (*Map, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to init grass image: %v", err)
 	}
-	for x := 0; x < gameData.MapWidth; x++ {
-		tiles[x] = make([]MapTile, gameData.MapHeight)
-		for y := 0; y < gameData.MapHeight; y++ {
+	for x := 0; x < cfg.Map.Width; x++ {
+		tiles[x] = make([]MapTile, cfg.Map.Height)
+		for y := 0; y < cfg.Map.Height; y++ {
 			tile := MapTile{
-				PixelX: x * gameData.TileSize,
-				PixelY: y * gameData.TileSize,
+				PixelX: x * cfg.Common.TileSize,
+				PixelY: y * cfg.Common.TileSize,
 			}
-			if x == 0 || x == gameData.MapWidth-1 || y == 0 || y == gameData.MapHeight-1 {
+			if x == 0 || x == cfg.Map.Width-1 || y == 0 || y == cfg.Map.Height-1 {
 				tile.Blocked = true
 				tile.Image = wall
 			} else {
@@ -50,9 +50,9 @@ func NewMap(gameData *data.GameData) (*Map, error) {
 	}
 
 	return &Map{
-		tiles:    tiles,
-		gameData: gameData,
-		world:    ebiten.NewImage(gameData.MapWidth*gameData.TileSize, gameData.MapHeight*gameData.TileSize),
+		tiles: tiles,
+		cfg:   cfg,
+		world: ebiten.NewImage(cfg.Map.Width*cfg.Common.TileSize, cfg.Map.Height*cfg.Common.TileSize),
 	}, nil
 }
 
@@ -62,8 +62,8 @@ func (gameMap *Map) IsCanMove(x, y int) bool {
 }
 
 func (gameMap *Map) Update() {
-	for x := 0; x < gameMap.gameData.MapWidth; x++ {
-		for y := 0; y < gameMap.gameData.MapHeight; y++ {
+	for x := 0; x < gameMap.cfg.Map.Width; x++ {
+		for y := 0; y < gameMap.cfg.Map.Height; y++ {
 			tile := gameMap.tiles[x][y]
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))

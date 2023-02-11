@@ -3,7 +3,7 @@ package game
 import (
 	"fmt"
 	"github.com/VxVxN/game/internal/base"
-	"github.com/VxVxN/game/internal/data"
+	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/internal/eventmanager"
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/internal/player"
@@ -14,20 +14,18 @@ import (
 
 type Game struct {
 	gameMap      *gamemap.Map
-	data         data.GameData
+	cfg          *config.Config
 	player       *player.Player
 	eventManager *eventmanager.EventManager
 	globalTime   time.Time
 }
 
-func NewGame() (*Game, error) {
-	gameData := data.NewGameData()
-
-	gameMap, err := gamemap.NewMap(&gameData)
+func NewGame(cfg *config.Config) (*Game, error) {
+	gameMap, err := gamemap.NewMap(cfg)
 	if err != nil {
 		return nil, err
 	}
-	player, err := player.NewPlayer(base.NewPosition(1, 1), "assets/characters.png", gameData.TileSize, 3)
+	player, err := player.NewPlayer(base.NewPosition(1, 1), cfg.Player.ImagePath, cfg.Common.TileSize, cfg.Player.FrameCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -66,7 +64,7 @@ func NewGame() (*Game, error) {
 
 	game := &Game{
 		gameMap:      gameMap,
-		data:         gameData,
+		cfg:          cfg,
 		player:       player,
 		eventManager: eventManager,
 		globalTime:   time.Now(),
@@ -75,7 +73,7 @@ func NewGame() (*Game, error) {
 }
 
 func (game *Game) Update() error {
-	if time.Since(game.globalTime) < time.Second/25 {
+	if time.Since(game.globalTime) < time.Second/time.Duration(game.cfg.Common.RefreshRateFramesPerSecond) {
 		return nil
 	}
 	game.gameMap.Update()
@@ -86,16 +84,15 @@ func (game *Game) Update() error {
 
 func (game *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(game.data.TileSize*-game.player.Position.X+game.data.ScreenWidthPx/2), float64(game.data.TileSize*-game.player.Position.Y+game.data.ScreenHeightPx/2))
+	op.GeoM.Translate(float64(game.cfg.Common.TileSize*-game.player.Position.X+game.cfg.Common.WindowWidth/2),
+		float64(game.cfg.Common.TileSize*-game.player.Position.Y+game.cfg.Common.WindowHeight/2))
 	screen.DrawImage(game.gameMap.Image(), op)
 
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(game.data.ScreenWidthPx/2), float64(game.data.ScreenHeightPx/2))
+	op.GeoM.Translate(float64(game.cfg.Common.WindowWidth/2), float64(game.cfg.Common.WindowHeight/2))
 	screen.DrawImage(game.player.Image(), op)
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
-	game.data.ScreenWidthPx = screenWidthPx
-	game.data.ScreenHeightPx = screenHeightPx
-	return screenWidthPx, screenHeightPx
+	return game.cfg.Common.WindowWidth, game.cfg.Common.WindowHeight
 }
