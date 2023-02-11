@@ -27,7 +27,7 @@ func NewGame() (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	player, err := player.NewPlayer(base.NewPosition(1, 1), "assets/player.png", &gameData)
+	player, err := player.NewPlayer(base.NewPosition(1, 1), "assets/characters.png", gameData.TileSize, 3)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -60,6 +60,9 @@ func NewGame() (*Game, error) {
 	eventManager.AddEvent(ebiten.KeyEscape, func() {
 		os.Exit(0) // todo add normal game end processing
 	})
+	eventManager.AddDefaultEvent(func() {
+		player.Stand()
+	})
 
 	game := &Game{
 		gameMap:      gameMap,
@@ -76,7 +79,7 @@ func (game *Game) Update() error {
 		return nil
 	}
 	game.gameMap.Update()
-	game.eventManager.Process()
+	game.eventManager.Update()
 	game.globalTime = time.Now()
 	return nil
 }

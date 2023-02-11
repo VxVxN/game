@@ -1,33 +1,30 @@
 package player
 
 import (
+	"github.com/VxVxN/game/internal/animation"
 	"github.com/VxVxN/game/internal/base"
-	"github.com/VxVxN/game/internal/data"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Player struct {
-	Position base.Position
-	image    *ebiten.Image
-	gameData *data.GameData
+	Position  base.Position
+	animation *animation.Animation
 }
 
-func NewPlayer(position base.Position, imagePath string, gameData *data.GameData) (*Player, error) {
-	image, _, err := ebitenutil.NewImageFromFile(imagePath)
+func NewPlayer(position base.Position, imagePath string, tileSize, framesCount int) (*Player, error) {
+	animation, err := animation.NewAnimation(imagePath, framesCount, tileSize)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Player{
-		Position: position,
-		image:    image,
-		gameData: gameData,
+		Position:  position,
+		animation: animation,
 	}, nil
 }
 
 func (player *Player) Image() *ebiten.Image {
-	return player.image
+	return player.animation.GetCurrentFrame()
 }
 
 func (player *Player) Move(key ebiten.Key) {
@@ -42,4 +39,9 @@ func (player *Player) Move(key ebiten.Key) {
 		player.Position.X++
 	default:
 	}
+	player.animation.Update(key)
+}
+
+func (player *Player) Stand() {
+	player.animation.SetDefaultFrame()
 }

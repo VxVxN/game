@@ -5,7 +5,8 @@ import (
 )
 
 type EventManager struct {
-	events map[ebiten.Key][]func()
+	events        map[ebiten.Key][]func()
+	defaultEvents []func()
 }
 
 func NewEventManager() *EventManager {
@@ -14,7 +15,7 @@ func NewEventManager() *EventManager {
 	}
 }
 
-func (eventManager EventManager) Process() {
+func (eventManager *EventManager) Update() {
 	var key ebiten.Key
 	if ebiten.IsKeyPressed(ebiten.KeyUp) {
 		key = ebiten.KeyUp
@@ -33,6 +34,9 @@ func (eventManager EventManager) Process() {
 	}
 	events, ok := eventManager.events[key]
 	if !ok {
+		for _, event := range eventManager.defaultEvents {
+			event()
+		}
 		return // we don't have events
 	}
 	for _, event := range events {
@@ -40,8 +44,12 @@ func (eventManager EventManager) Process() {
 	}
 }
 
-func (eventManager EventManager) AddEvent(key ebiten.Key, event func()) {
+func (eventManager *EventManager) AddEvent(key ebiten.Key, event func()) {
 	events, _ := eventManager.events[key]
 	events = append(events, event)
 	eventManager.events[key] = events
+}
+
+func (eventManager *EventManager) AddDefaultEvent(event func()) {
+	eventManager.defaultEvents = append(eventManager.defaultEvents, event)
 }
