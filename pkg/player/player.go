@@ -1,8 +1,8 @@
 package player
 
 import (
-	"github.com/VxVxN/game/internal/animation"
 	"github.com/VxVxN/game/internal/base"
+	"github.com/VxVxN/game/pkg/animation"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 

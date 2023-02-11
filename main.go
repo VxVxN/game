@@ -22,7 +22,8 @@ func main() {
 
 	ebiten.SetWindowTitle(cfg.Common.WindowTitle)
 	ebiten.SetWindowSize(cfg.Common.WindowWidth, cfg.Common.WindowHeight)
-	if err := ebiten.RunGame(game); err != nil {
+
+	if err = ebiten.RunGame(game); err != nil {
 		log.Fatalf("Failed to run game: %v", err)
 	}
 }
