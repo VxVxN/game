@@ -58,7 +58,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	eventManager.AddEvent(ebiten.KeyEscape, func() {
 		os.Exit(0) // todo add normal game end processing
 	})
-	eventManager.AddDefaultEvent(func() {
+	eventManager.SetDefaultEvent(func() {
 		player.Stand()
 	})
 

@@ -5,8 +5,8 @@ import (
 )
 
 type EventManager struct {
-	events        map[ebiten.Key][]func()
-	defaultEvents []func()
+	events       map[ebiten.Key][]func()
+	defaultEvent func()
 }
 
 func NewEventManager() *EventManager {
@@ -34,9 +34,7 @@ func (eventManager *EventManager) Update() {
 	}
 	events, ok := eventManager.events[key]
 	if !ok {
-		for _, event := range eventManager.defaultEvents {
-			event()
-		}
+		eventManager.defaultEvent()
 		return // we don't have events
 	}
 	for _, event := range events {
@@ -50,6 +48,6 @@ func (eventManager *EventManager) AddEvent(key ebiten.Key, event func()) {
 	eventManager.events[key] = events
 }
 
-func (eventManager *EventManager) AddDefaultEvent(event func()) {
-	eventManager.defaultEvents = append(eventManager.defaultEvents, event)
+func (eventManager *EventManager) SetDefaultEvent(event func()) {
+	eventManager.defaultEvent = event
 }
