@@ -7,7 +7,13 @@ import (
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/internal/game"
 	"github.com/hajimehoshi/ebiten/v2"
+	"math/rand"
+	"time"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	cfg, err := config.ParseConfig("config.json")

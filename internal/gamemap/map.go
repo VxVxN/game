@@ -5,6 +5,7 @@ import (
 	"github.com/VxVxN/game/internal/config"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"image"
 )
 
 type Map struct {
@@ -23,14 +24,19 @@ type MapTile struct {
 func NewMap(cfg *config.Config) (*Map, error) {
 	tiles := make([][]MapTile, cfg.Map.Width)
 
-	wall, _, err := ebitenutil.NewImageFromFile("assets/wall.png")
+	tileSet, _, err := ebitenutil.NewImageFromFile(cfg.Map.TileSetPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init wall image: %v", err)
 	}
-	floor, _, err := ebitenutil.NewImageFromFile("assets/grass.png")
-	if err != nil {
-		return nil, fmt.Errorf("failed to init grass image: %v", err)
-	}
+
+	x0, y0 := 0, 993
+	x1, y1 := (x0+1)*cfg.Common.TileSize, (y0+1)*cfg.Common.TileSize
+	wall := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
+
+	x0, y0 = 0, 0
+	x1, y1 = (x0+1)*cfg.Common.TileSize, (y0+1)*cfg.Common.TileSize
+	floor := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
+
 	for x := 0; x < cfg.Map.Width; x++ {
 		tiles[x] = make([]MapTile, cfg.Map.Height)
 		for y := 0; y < cfg.Map.Height; y++ {

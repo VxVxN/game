@@ -18,8 +18,9 @@ type Config struct {
 		FrameCount int    `json:"frameCount"`
 	} `json:"player"`
 	Map struct {
-		Width  int `json:"width"`
-		Height int `json:"height"`
+		Width       int    `json:"width"`
+		Height      int    `json:"height"`
+		TileSetPath string `json:"tileSetPath"`
 	} `json:"map"`
 }
 

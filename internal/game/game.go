@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"os"
 	"time"
+	"github.com/VxVxN/game/pkg/utils"
 )
 
 type Game struct {
@@ -25,7 +26,9 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	player, err := player.NewPlayer(base.NewPosition(1, 1), cfg.Player.ImagePath, cfg.Common.TileSize, cfg.Player.FrameCount)
+
+	playerPosition := base.NewPosition(utils.RandomIntByRange(1, cfg.Map.Width-1), utils.RandomIntByRange(1, cfg.Map.Height-1))
+	player, err := player.NewPlayer(playerPosition, cfg.Player.ImagePath, cfg.Common.TileSize, cfg.Player.FrameCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
