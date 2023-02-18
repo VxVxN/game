@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"github.com/VxVxN/game/internal/base"
+	"github.com/VxVxN/game/internal/camera"
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/eventmanager"
@@ -19,6 +20,7 @@ type Game struct {
 	cfg             *config.Config
 	player          *player.Player
 	eventManager    *eventmanager.EventManager
+	camera          *camera.Camera
 	globalTime      time.Time
 	isShowDebugInfo bool
 }
@@ -43,7 +45,12 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		globalTime:      time.Now(),
 		isShowDebugInfo: true,
 		eventManager:    eventmanager.NewEventManager(),
+		camera:          camera.NewCamera(cfg),
 	}
+
+	game.camera.AddPlayerImage(player.Image())
+	game.camera.AddBackgroundImage(gameMap.BackgroundImage())
+	game.camera.AddFrontImages(gameMap.FrontImages())
 
 	game.addEvents(gameMap, player)
 
@@ -92,25 +99,14 @@ func (game *Game) Update() error {
 	}
 	game.eventManager.Update()
 	game.globalTime = time.Now()
+
+	game.camera.AddPlayerImage(game.player.Image())
+	game.camera.Update(game.player.Position)
 	return nil
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(game.cfg.Common.TileSize*-game.player.Position.X+game.cfg.Common.WindowWidth/2),
-		float64(game.cfg.Common.TileSize*-game.player.Position.Y+game.cfg.Common.WindowHeight/2))
-	screen.DrawImage(game.gameMap.BackgroundImage(), op)
-
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(game.cfg.Common.WindowWidth/2), float64(game.cfg.Common.WindowHeight/2))
-	screen.DrawImage(game.player.Image(), op)
-
-	for _, frontImage := range game.gameMap.FrontImages() {
-		op = &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(game.cfg.Common.TileSize*-game.player.Position.X+game.cfg.Common.WindowWidth/2),
-			float64(game.cfg.Common.TileSize*-game.player.Position.Y+game.cfg.Common.WindowHeight/2))
-		screen.DrawImage(frontImage, op)
-	}
+	game.camera.Draw(screen)
 
 	if game.isShowDebugInfo {
 		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %d, Y = %d\nLayers: %d", game.player.Position.X, game.player.Position.Y,
