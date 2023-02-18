@@ -7,10 +7,10 @@ import (
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/player"
+	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"os"
 	"time"
-	"github.com/VxVxN/game/pkg/utils"
 )
 
 type Game struct {
@@ -89,11 +89,18 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(game.cfg.Common.TileSize*-game.player.Position.X+game.cfg.Common.WindowWidth/2),
 		float64(game.cfg.Common.TileSize*-game.player.Position.Y+game.cfg.Common.WindowHeight/2))
-	screen.DrawImage(game.gameMap.Image(), op)
+	screen.DrawImage(game.gameMap.BackgroundImage(), op)
 
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(game.cfg.Common.WindowWidth/2), float64(game.cfg.Common.WindowHeight/2))
 	screen.DrawImage(game.player.Image(), op)
+
+	for _, frontImage := range game.gameMap.FrontImages() {
+		op = &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(game.cfg.Common.TileSize*-game.player.Position.X+game.cfg.Common.WindowWidth/2),
+			float64(game.cfg.Common.TileSize*-game.player.Position.Y+game.cfg.Common.WindowHeight/2))
+		screen.DrawImage(frontImage, op)
+	}
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {

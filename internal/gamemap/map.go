@@ -12,9 +12,12 @@ import (
 )
 
 type Map struct {
-	layers []Layer
-	world  *ebiten.Image
-	cfg    *config.Config
+	layerContainer *LayerContainer
+	cfg            *config.Config
+	// backgroundImage first layer
+	backgroundImage *ebiten.Image
+	// frontImages other layers
+	frontImages []*ebiten.Image
 }
 
 type MapTile struct {
@@ -24,8 +27,6 @@ type MapTile struct {
 	Invisible bool
 	Image     *ebiten.Image
 }
-
-type Layer [][]MapTile
 
 // todo rewrite this trash
 func NewMap(cfg *config.Config) (*Map, error) {
@@ -52,21 +53,21 @@ func NewMap(cfg *config.Config) (*Map, error) {
 
 	x0, y0 = 0, 63
 	x1, y1 = (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
-	forestBotton1 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
+	forestBottom1 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	x0, y0 = 32, 63
 	x1, y1 = (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
-	forestBotton2 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
+	forestBottom2 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	coord := base.Position{Y: 1, X: 1}
 	chunk := utils.NewChunk(cfg.Map.Width, int(time.Now().UnixNano()), coord)
 
 	gameMap := &Map{
-		cfg:   cfg,
-		world: ebiten.NewImage(cfg.Map.Width*cfg.Common.TileSize, cfg.Map.Height*cfg.Common.TileSize),
+		cfg:             cfg,
+		backgroundImage: ebiten.NewImage(cfg.Map.Width*cfg.Common.TileSize, cfg.Map.Height*cfg.Common.TileSize),
 	}
 
-	var layers []Layer
+	layerContainer := NewLayerContainer(cfg.Map.Width, cfg.Map.Height)
 
 	// first layer
 	tiles := make([][]MapTile, cfg.Map.Width)
@@ -87,15 +88,11 @@ func NewMap(cfg *config.Config) (*Map, error) {
 			tiles[x][y] = tile
 		}
 	}
-	layers = append(layers, tiles)
+	layerContainer.SetCurrent(tiles)
+	tiles = layerContainer.Next()
 
-	// second layer
-	tiles = make([][]MapTile, cfg.Map.Width)
-	for x := 0; x < cfg.Map.Width; x++ {
-		tiles[x] = make([]MapTile, cfg.Map.Height)
-	}
-	for x := 0; x < cfg.Map.Width; x++ {
-		for y := 0; y < cfg.Map.Height; y++ {
+	for y := 0; y < cfg.Map.Height; y++ {
+		for x := 0; x < cfg.Map.Width; x++ {
 			tile := MapTile{
 				PixelX:    x * cfg.Common.TileSize,
 				PixelY:    y * cfg.Common.TileSize,
@@ -115,53 +112,64 @@ func NewMap(cfg *config.Config) (*Map, error) {
 			switch tileType {
 			case utils.Forest:
 				if x != 0 && y != 0 && x < cfg.Map.Width-2 && y < cfg.Map.Height-2 {
-					tile1 := MapTile{
-						PixelX:    x * cfg.Common.TileSize,
-						PixelY:    y * cfg.Common.TileSize,
-						Invisible: false,
-						Blocked:   true,
-						Image:     forestTop1,
-					}
-					tile2 := MapTile{
-						PixelX:    (x + 1) * cfg.Common.TileSize,
-						PixelY:    y * cfg.Common.TileSize,
-						Invisible: false,
-						Blocked:   true,
-						Image:     forestTop2,
-					}
-					tile3 := MapTile{
-						PixelX:    x * cfg.Common.TileSize,
-						PixelY:    (y + 1) * cfg.Common.TileSize,
-						Invisible: false,
-						Blocked:   true,
-						Image:     forestBotton1,
-					}
-					tile4 := MapTile{
-						PixelX:    (x + 1) * cfg.Common.TileSize,
-						PixelY:    (y + 1) * cfg.Common.TileSize,
-						Invisible: false,
-						Blocked:   true,
-						Image:     forestBotton2,
-					}
-					tiles[x][y] = tile1
-					tiles[x+1][y] = tile2
-					tiles[x][y+1] = tile3
-					tiles[x+1][y+1] = tile4
+					currentIndex := layerContainer.GetIndex()
+					layer := layerContainer.GetLayerWithoutCollisions([]base.Position{{x, y}, {x + 1, y}, {x, y + 1}, {x + 1, y + 1}})
+					makeTree(cfg, x, y, forestTop1, forestTop2, forestBottom1, forestBottom2, layer)
+					layerContainer.SetIndex(currentIndex)
 					continue
 				}
 			}
 			tiles[x][y] = tile
 		}
 	}
-	layers = append(layers, tiles)
+	layerContainer.SetCurrent(tiles)
 
-	gameMap.layers = layers
+	gameMap.layerContainer = layerContainer
+
+	for i := 0; i < len(layerContainer.Elements()); i++ {
+		gameMap.frontImages = append(gameMap.frontImages, ebiten.NewImage(cfg.Map.Width*cfg.Common.TileSize, cfg.Map.Height*cfg.Common.TileSize))
+	}
 
 	return gameMap, nil
 }
 
+func makeTree(cfg *config.Config, x int, y int, forestTop1 *ebiten.Image, forestTop2 *ebiten.Image, forestBottom1 *ebiten.Image, forestBottom2 *ebiten.Image, tiles [][]MapTile) {
+	tile1 := MapTile{
+		PixelX:    x * cfg.Common.TileSize,
+		PixelY:    y * cfg.Common.TileSize,
+		Invisible: false,
+		Blocked:   false,
+		Image:     forestTop1,
+	}
+	tile2 := MapTile{
+		PixelX:    (x + 1) * cfg.Common.TileSize,
+		PixelY:    y * cfg.Common.TileSize,
+		Invisible: false,
+		Blocked:   false,
+		Image:     forestTop2,
+	}
+	tile3 := MapTile{
+		PixelX:    x * cfg.Common.TileSize,
+		PixelY:    (y + 1) * cfg.Common.TileSize,
+		Invisible: false,
+		Blocked:   true,
+		Image:     forestBottom1,
+	}
+	tile4 := MapTile{
+		PixelX:    (x + 1) * cfg.Common.TileSize,
+		PixelY:    (y + 1) * cfg.Common.TileSize,
+		Invisible: false,
+		Blocked:   true,
+		Image:     forestBottom2,
+	}
+	tiles[x][y] = tile1
+	tiles[x+1][y] = tile2
+	tiles[x][y+1] = tile3
+	tiles[x+1][y+1] = tile4
+}
+
 func (gameMap *Map) IsCanMove(x, y int) bool {
-	for _, layerTiles := range gameMap.layers {
+	for _, layerTiles := range gameMap.layerContainer.Elements() {
 		if layerTiles[x][y].Blocked {
 			return false
 		}
@@ -170,24 +178,37 @@ func (gameMap *Map) IsCanMove(x, y int) bool {
 }
 
 func (gameMap *Map) Update() {
-	for _, layerTiles := range gameMap.layers {
-		for x := 0; x < gameMap.cfg.Map.Width; x++ {
-			for y := 0; y < gameMap.cfg.Map.Height; y++ {
-				tile := layerTiles[x][y]
-				if tile.Invisible {
-					continue
-				}
+	for i, layerTiles := range gameMap.layerContainer.Elements() {
+		if i == 0 {
+			gameMap.prepareImage(gameMap.backgroundImage, layerTiles)
+			continue
+		}
+		// -1 layer background
+		gameMap.prepareImage(gameMap.frontImages[i-1], layerTiles)
+	}
+}
 
-				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))
-				gameMap.world.DrawImage(tile.Image, op)
+func (gameMap *Map) prepareImage(backgroundImage *ebiten.Image, layerTiles Layer) {
+	for x := 0; x < gameMap.cfg.Map.Width; x++ {
+		for y := 0; y < gameMap.cfg.Map.Height; y++ {
+			if !existTile(layerTiles, x, y) {
+				continue
 			}
+			tile := layerTiles[x][y]
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))
+			backgroundImage.DrawImage(tile.Image, op)
 		}
 	}
 }
 
-func (gameMap *Map) Image() *ebiten.Image {
-	return gameMap.world
+func (gameMap *Map) BackgroundImage() *ebiten.Image {
+	return gameMap.backgroundImage
+}
+
+func (gameMap *Map) FrontImages() []*ebiten.Image {
+	return gameMap.frontImages
 }
 
 func existTile(layer Layer, x, y int) bool {
