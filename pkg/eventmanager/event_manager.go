@@ -15,22 +15,22 @@ func NewEventManager() *EventManager {
 	}
 }
 
+var supportedKeys = []ebiten.Key{
+	ebiten.KeyUp,
+	ebiten.KeyDown,
+	ebiten.KeyLeft,
+	ebiten.KeyRight,
+	ebiten.KeyTab,
+	ebiten.KeyEscape,
+}
+
 func (eventManager *EventManager) Update() {
 	var key ebiten.Key
-	if ebiten.IsKeyPressed(ebiten.KeyUp) {
-		key = ebiten.KeyUp
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyDown) {
-		key = ebiten.KeyDown
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		key = ebiten.KeyLeft
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		key = ebiten.KeyRight
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		key = ebiten.KeyEscape
+
+	for _, supportedKey := range supportedKeys {
+		if ebiten.IsKeyPressed(supportedKey) {
+			key = supportedKey
+		}
 	}
 	events, ok := eventManager.events[key]
 	if !ok {
