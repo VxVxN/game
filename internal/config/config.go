@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+type Mode string
+
+const (
+	ViewMode = "view"
+)
+
 type Config struct {
 	Common struct {
 		TileSize                   int    `json:"tileSize"`
@@ -12,6 +18,7 @@ type Config struct {
 		WindowWidth                int    `json:"windowWidth"`
 		WindowHeight               int    `json:"windowHeight"`
 		RefreshRateFramesPerSecond int    `json:"refreshRateFramesPerSecond"`
+		Mode                       Mode   `json:"mode"`
 	} `json:"common"`
 	Player struct {
 		ImagePath  string `json:"imagePath"`

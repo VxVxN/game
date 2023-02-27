@@ -8,8 +8,8 @@ import (
 type TileType int
 
 const (
-	Tree  TileType = iota
-	Water TileType = iota
+	Tree TileType = iota
+	Water
 	Grass
 )
 
@@ -43,10 +43,10 @@ func SetTile(x int, chunkMap map[int]map[int]TileType, y int, perlinSeed int) {
 	switch {
 	case perlinValue < -0.3:
 		tileType = Tree
-	case perlinValue >= -0.3:
+	//case perlinValue >= 0:
+	//	tileType = Water
+	default:
 		tileType = Grass
-	case perlinValue > 0.5:
-		//tileType = Water
 	}
 	chunkMap[x][y] = tileType
 }
