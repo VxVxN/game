@@ -8,7 +8,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image"
-	"time"
 )
 
 type Map struct {
@@ -35,6 +34,15 @@ func NewMap(cfg *config.Config) (*Map, error) {
 		return nil, fmt.Errorf("failed to init wall image: %v", err)
 	}
 
+	//waterTileSet, _, err := ebitenutil.NewImageFromFile("assets/tileset/[A]_type1/[A]Water2_pipo.png")
+	//if err != nil {
+	//	return nil, fmt.Errorf("failed to init wall image: %v", err)
+	//}
+
+	//x0, y0 := 0, 128
+	//x1, y1 := (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
+	//water := waterTileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
+
 	x0, y0 := 0, 993
 	x1, y1 := (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
 	wall := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
@@ -60,7 +68,7 @@ func NewMap(cfg *config.Config) (*Map, error) {
 	forestBottom2 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	coord := base.Position{Y: 1, X: 1}
-	chunk := utils.NewChunk(cfg.Map.Width, int(time.Now().UnixNano()), coord)
+	chunk := utils.NewChunk(cfg.Map.Width, utils.RandomIntByRange(20, 30), coord)
 
 	gameMap := &Map{
 		cfg:             cfg,
@@ -109,15 +117,20 @@ func NewMap(cfg *config.Config) (*Map, error) {
 				continue
 			}
 
+			if x == 0 || y == 0 || x == cfg.Map.Width-1 || y == cfg.Map.Height-1 { // don't touch the edge of the map
+				tiles[x][y] = tile
+				continue
+			}
+
 			switch tileType {
-			case utils.Forest:
-				if x != 0 && y != 0 && x < cfg.Map.Width-2 && y < cfg.Map.Height-2 {
+			case utils.Tree:
+				if x < cfg.Map.Width-2 && y < cfg.Map.Height-2 { // don't touch the edge of the map
 					currentIndex := layerContainer.GetIndex()
 					layer := layerContainer.GetLayerWithoutCollisions([]base.Position{{x, y}, {x + 1, y}, {x, y + 1}, {x + 1, y + 1}})
 					makeTree(cfg, x, y, forestTop1, forestTop2, forestBottom1, forestBottom2, layer)
 					layerContainer.SetIndex(currentIndex)
-					continue
 				}
+				continue
 			}
 			tiles[x][y] = tile
 		}

@@ -14,10 +14,10 @@ func Noise(x, y float32) float32 {
 	localX := x - left
 	localy := y - top
 
-	topLeft := getRandomVector()
-	topRight := getRandomVector()
-	bottomLeft := getRandomVector()
-	bottomRight := getRandomVector()
+	topLeft := getRandomVector(x, y)
+	topRight := getRandomVector(x+1, y)
+	bottomLeft := getRandomVector(x, y+1)
+	bottomRight := getRandomVector(x+1, y+1)
 
 	// Vectors from vertices to a point inside
 	dTopLeft := []float32{localX, localy}
@@ -43,9 +43,8 @@ func Noise(x, y float32) float32 {
 
 }
 
-func getRandomVector() []float32 {
-	v := rand.Intn(3)
-
+func getRandomVector(x, y float32) []float32 {
+	v := (int(x+y) + rand.Intn(2)) % 4
 	switch v {
 	case 0:
 		return []float32{-1, 0}

@@ -8,8 +8,8 @@ import (
 type TileType int
 
 const (
-	Forest TileType = iota
-	Water  TileType = iota
+	Tree  TileType = iota
+	Water TileType = iota
 	Grass
 )
 
@@ -38,12 +38,11 @@ func NewChunk(chunkSize, perlinSeed int, idChunk base.Position) Chunk {
 }
 
 func SetTile(x int, chunkMap map[int]map[int]TileType, y int, perlinSeed int) {
-	perlinSeed = 32
 	var tileType TileType
-	perlinValue := Noise(float32(RandomFloatBetween0And1())+float32(x), float32(RandomFloatBetween0And1())+float32(y))
+	perlinValue := Noise(float32(x)/float32(perlinSeed), float32(y)/float32(perlinSeed))
 	switch {
 	case perlinValue < -0.3:
-		tileType = Forest
+		tileType = Tree
 	case perlinValue >= -0.3:
 		tileType = Grass
 	case perlinValue > 0.5:
