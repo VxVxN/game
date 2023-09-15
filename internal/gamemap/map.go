@@ -39,12 +39,12 @@ func NewMap(cfg *config.Config) (*Map, error) {
 	//	return nil, fmt.Errorf("failed to init wall image: %v", err)
 	//}
 
-	//x0, y0 := 0, 128
-	//x1, y1 := (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
+	x0, y0 := 0, 128
+	x1, y1 := (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
 	//water := waterTileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
-	x0, y0 := 0, 993
-	x1, y1 := (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
+	x0, y0 = 0, 993
+	x1, y1 = (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
 	wall := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	x0, y0 = 0, 0
@@ -127,7 +127,9 @@ func NewMap(cfg *config.Config) (*Map, error) {
 				if x < cfg.Map.Width-2 && y < cfg.Map.Height-2 { // don't touch the edge of the map
 					currentIndex := layerContainer.GetIndex()
 					layer := layerContainer.GetLayerWithoutCollisions([]base.Position{{x, y}, {x + 1, y}, {x, y + 1}, {x + 1, y + 1}})
-					makeTree(cfg, x, y, forestTop1, forestTop2, forestBottom1, forestBottom2, layer)
+					if layerContainer.GetIndex() < 8 { // [optimization] don't make trees higher than 8 layers
+						makeTree(cfg, x, y, forestTop1, forestTop2, forestBottom1, forestBottom2, layer)
+					}
 					layerContainer.SetIndex(currentIndex)
 				}
 				continue
