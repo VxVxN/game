@@ -34,14 +34,14 @@ func NewMap(cfg *config.Config) (*Map, error) {
 		return nil, fmt.Errorf("failed to init wall image: %v", err)
 	}
 
-	//waterTileSet, _, err := ebitenutil.NewImageFromFile("assets/tileset/[A]_type1/[A]Water2_pipo.png")
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to init wall image: %v", err)
-	//}
+	waterTileSet, _, err := ebitenutil.NewImageFromFile("assets/tileset/[A]_type1/[A]Water2_pipo.png")
+	if err != nil {
+		return nil, fmt.Errorf("failed to init wall image: %v", err)
+	}
 
 	x0, y0 := 0, 128
 	x1, y1 := (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
-	//water := waterTileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
+	water := waterTileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	x0, y0 = 0, 993
 	x1, y1 = (x0+1)+cfg.Common.TileSize, (y0+1)+cfg.Common.TileSize
@@ -68,7 +68,7 @@ func NewMap(cfg *config.Config) (*Map, error) {
 	forestBottom2 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	coord := base.Position{Y: 1, X: 1}
-	chunk := utils.NewChunk(cfg.Map.Width, 40, coord)
+	chunk := utils.NewChunk(cfg.Map.Width, 40, 120, coord)
 
 	gameMap := &Map{
 		cfg:             cfg,
@@ -77,7 +77,7 @@ func NewMap(cfg *config.Config) (*Map, error) {
 
 	layerContainer := NewLayerContainer(cfg.Map.Width, cfg.Map.Height)
 
-	// first layer
+	// first layer: grass and walls around the edges
 	tiles := make([][]MapTile, cfg.Map.Width)
 	for x := 0; x < cfg.Map.Width; x++ {
 		tiles[x] = make([]MapTile, cfg.Map.Height)
@@ -99,6 +99,7 @@ func NewMap(cfg *config.Config) (*Map, error) {
 	layerContainer.SetCurrent(tiles)
 	tiles = layerContainer.Next()
 
+	// build other layers
 	for y := 0; y < cfg.Map.Height; y++ {
 		for x := 0; x < cfg.Map.Width; x++ {
 			tile := MapTile{
@@ -133,8 +134,9 @@ func NewMap(cfg *config.Config) (*Map, error) {
 					layerContainer.SetIndex(currentIndex)
 				}
 				continue
-				//case utils.Water:
-				//	tile.Image = water
+			case utils.Water:
+				tile.Image = water
+				tile.Blocked = true
 			}
 			tiles[x][y] = tile
 		}

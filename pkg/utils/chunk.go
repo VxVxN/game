@@ -18,7 +18,7 @@ type Chunk struct {
 	Map     map[int]map[int]TileType
 }
 
-func NewChunk(chunkSize, perlinSeed int, idChunk base.Position) Chunk {
+func NewChunk(chunkSize, treePerlinSeed, waterPerlinSeed int, idChunk base.Position) Chunk {
 	chunk := Chunk{ChunkID: [2]int{idChunk.X, idChunk.Y}}
 
 	var chunkXMax, chunkYMax int
@@ -29,7 +29,21 @@ func NewChunk(chunkSize, perlinSeed int, idChunk base.Position) Chunk {
 	for x := 0; x < chunkXMax; x++ {
 		chunkMap[x] = make(map[int]TileType)
 		for y := 0; y < chunkYMax; y++ {
-			SetTile(x, chunkMap, y, perlinSeed)
+			chunkMap[x][y] = Grass
+		}
+	}
+
+	for x := 0; x < chunkXMax; x++ {
+		for y := 0; y < chunkYMax; y++ {
+			setTile(x, chunkMap, y, waterPerlinSeed, Water)
+		}
+	}
+	fillWaterGaps(chunkMap, chunkXMax)
+	fillWaterGaps(chunkMap, chunkXMax)
+
+	for x := 0; x < chunkXMax; x++ {
+		for y := 0; y < chunkYMax; y++ {
+			setTile(x, chunkMap, y, treePerlinSeed, Tree)
 		}
 	}
 
@@ -37,18 +51,65 @@ func NewChunk(chunkSize, perlinSeed int, idChunk base.Position) Chunk {
 	return chunk
 }
 
-func SetTile(x int, chunkMap map[int]map[int]TileType, y int, perlinSeed int) {
-	var tileType TileType
+func Abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func fillWaterGaps(chunkMap map[int]map[int]TileType, chunkMax int) {
+	for x := 0; x < chunkMax; x++ {
+		var firstWaterIndex int
+		for y := 0; y < chunkMax; y++ {
+			if chunkMap[x][y] != Water {
+				continue
+			}
+			if firstWaterIndex == 0 {
+				firstWaterIndex = y
+				continue
+			}
+			if Abs(firstWaterIndex-y) > 20 {
+				firstWaterIndex = y
+				continue
+			}
+			for i := firstWaterIndex; i < y; i++ {
+				chunkMap[x][i] = Water
+			}
+			firstWaterIndex = y
+		}
+	}
+	for y := 0; y < chunkMax; y++ {
+		var firstWaterIndex int
+		for x := 0; x < chunkMax; x++ {
+			if chunkMap[x][y] != Water {
+				continue
+			}
+			if firstWaterIndex == 0 {
+				firstWaterIndex = x
+				continue
+			}
+			if Abs(firstWaterIndex-x) > 20 {
+				firstWaterIndex = x
+				continue
+			}
+			for i := firstWaterIndex; i < x; i++ {
+				chunkMap[i][y] = Water
+			}
+			firstWaterIndex = x
+		}
+	}
+}
+
+func setTile(x int, chunkMap map[int]map[int]TileType, y int, perlinSeed int, tileType TileType) {
+	if chunkMap[x][y] != Grass {
+		return
+	}
 	perlinValue := Noise(float32(x)/float32(perlinSeed), float32(y)/float32(perlinSeed))
 	switch {
 	case perlinValue < -0.3:
-		tileType = Tree
-	//case perlinValue >= 0:
-	//	tileType = Water
-	default:
-		tileType = Grass
+		chunkMap[x][y] = tileType
 	}
-	chunkMap[x][y] = tileType
 }
 
 func GetChunkID(tileSize, x, y int) base.Position {

@@ -56,7 +56,9 @@ func NewGame(cfg *config.Config) (*Game, error) {
 
 	switch game.cfg.Common.Mode {
 	case config.ViewMode:
-		zoom := 0.3
+		//zoom := 0.3
+		//zoom := 0.15
+		zoom := 1.0
 
 		game.player.Position.X = int(float64(game.cfg.Map.Width/2) * zoom)
 		game.player.Position.Y = int(float64(game.cfg.Map.Height/2) * zoom)
