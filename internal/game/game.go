@@ -11,18 +11,26 @@ import (
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
+	"image/color"
 	"os"
 	"time"
 )
 
 type Game struct {
-	gameMap         *gamemap.Map
-	cfg             *config.Config
-	player          *player.Player
-	eventManager    *eventmanager.EventManager
-	camera          *camera.Camera
-	globalTime      time.Time
-	isShowDebugInfo bool
+	gameMap          *gamemap.Map
+	cfg              *config.Config
+	player           *player.Player
+	eventManager     *eventmanager.EventManager
+	camera           *camera.Camera
+	globalTime       time.Time
+	statusPlayerFace font.Face
+	gameOverFace     font.Face
+	isShowDebugInfo  bool
 }
 
 func NewGame(cfg *config.Config) (*Game, error) {
@@ -38,14 +46,36 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
+	font, err := sfnt.Parse(goregular.TTF)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse TTF font: %v", err)
+	}
+
+	statusPlayerFace, err := opentype.NewFace(font, &opentype.FaceOptions{
+		Size: 16,
+		DPI:  72,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new status player face(font): %v", err)
+	}
+	gameOverFace, err := opentype.NewFace(font, &opentype.FaceOptions{
+		Size: 64,
+		DPI:  72,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new face for game ofer face(font): %v", err)
+	}
+
 	game := &Game{
-		gameMap:         gameMap,
-		cfg:             cfg,
-		player:          player,
-		globalTime:      time.Now(),
-		isShowDebugInfo: true,
-		eventManager:    eventmanager.NewEventManager(),
-		camera:          camera.NewCamera(cfg),
+		gameMap:          gameMap,
+		cfg:              cfg,
+		player:           player,
+		globalTime:       time.Now(),
+		isShowDebugInfo:  true,
+		eventManager:     eventmanager.NewEventManager(),
+		camera:           camera.NewCamera(cfg),
+		statusPlayerFace: statusPlayerFace,
+		gameOverFace:     gameOverFace,
 	}
 
 	game.camera.AddPlayerImage(player.Image())
@@ -126,6 +156,17 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %d, Y = %d\nLayers: %d", game.player.Position.X, game.player.Position.Y,
 			len(game.gameMap.FrontImages())+2)) // +2 -> gameMap.BackgroundImage() + player.Image()
 	}
+
+	if game.player.IsDead() {
+		text.Draw(screen, "Game over", game.gameOverFace, game.cfg.Common.WindowWidth/2-150, game.cfg.Common.WindowHeight/2, color.NRGBA{
+			R: 255,
+			A: 255,
+		})
+		return
+	}
+
+	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%", game.player.XP(), game.player.Satiety()), game.statusPlayerFace, game.cfg.Common.WindowWidth/2-50, 80, color.Black)
+	game.player.DecreaseSatiety()
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
