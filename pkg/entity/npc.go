@@ -62,8 +62,11 @@ func (npc *NPC) Update(playerPosition base.Position) {
 }
 
 func (npc *NPC) Draw(screen *ebiten.Image) {
-	x := npc.cfg.Common.TileSize*-npc.playerPosition.X + npc.cfg.Common.TileSize*npc.Position.X + npc.cfg.Common.WindowWidth/2
-	y := npc.cfg.Common.TileSize*-npc.playerPosition.Y + npc.cfg.Common.TileSize*npc.Position.Y + npc.cfg.Common.WindowHeight/2
+	tileSize := float64(npc.cfg.Common.TileSize)
+	windowWidth := float64(npc.cfg.Common.WindowWidth)
+	windowHeight := float64(npc.cfg.Common.WindowHeight)
+	x := tileSize*-npc.playerPosition.X + tileSize*npc.Position.X + windowWidth/2
+	y := tileSize*-npc.playerPosition.Y + tileSize*npc.Position.Y + windowHeight/2
 	//game.cfg.Common.WindowWidth
-	text.Draw(screen, npc.name, npc.nameFont, x+2, y, color.Black)
+	text.Draw(screen, npc.name, npc.nameFont, int(x+2), int(y), color.Black)
 }

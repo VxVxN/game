@@ -53,7 +53,7 @@ func (container *LayerContainer) GetLayerWithoutCollisions(positions []base.Posi
 			continue // skip background
 		}
 		for _, position := range positions {
-			if existTile(layer, position.X, position.Y) {
+			if existTile(layer, int(position.X), int(position.Y)) {
 				collisionLayend = i
 				break
 			}

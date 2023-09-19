@@ -35,17 +35,20 @@ func (camera *Camera) UpdateEntity(position base.Position) {
 func (camera *Camera) Draw(screen *ebiten.Image) {
 	var geoM ebiten.GeoM
 	geoM.Scale(camera.zoom, camera.zoom)
+	tileSize := float64(camera.cfg.Common.TileSize)
+	windowWidth := float64(camera.cfg.Common.WindowWidth)
+	windowHeight := float64(camera.cfg.Common.WindowHeight)
 
 	op := &ebiten.DrawImageOptions{GeoM: geoM}
-	op.GeoM.Translate(float64(camera.cfg.Common.TileSize*-camera.positionPlayer.X+camera.cfg.Common.WindowWidth/2),
-		float64(camera.cfg.Common.TileSize*-camera.positionPlayer.Y+camera.cfg.Common.WindowHeight/2))
+	op.GeoM.Translate(tileSize*-camera.positionPlayer.X+windowWidth/2,
+		tileSize*-camera.positionPlayer.Y+windowHeight/2)
 	screen.DrawImage(camera.backgroundImage, op)
 
 	for _, position := range camera.positionEntity {
 		_ = position
 		op = &ebiten.DrawImageOptions{GeoM: geoM}
-		op.GeoM.Translate(float64(camera.cfg.Common.TileSize*-camera.positionPlayer.X+camera.cfg.Common.TileSize*position.X+camera.cfg.Common.WindowWidth/2),
-			float64(camera.cfg.Common.TileSize*-camera.positionPlayer.Y+camera.cfg.Common.TileSize*position.Y+camera.cfg.Common.WindowHeight/2))
+		op.GeoM.Translate(tileSize*-camera.positionPlayer.X+tileSize*position.X+windowWidth/2,
+			tileSize*-camera.positionPlayer.Y+tileSize*position.Y+windowHeight/2)
 		screen.DrawImage(camera.entityImage, op)
 	}
 
@@ -55,8 +58,8 @@ func (camera *Camera) Draw(screen *ebiten.Image) {
 
 	for _, frontImage := range camera.frontImages {
 		op = &ebiten.DrawImageOptions{GeoM: geoM}
-		op.GeoM.Translate(float64(camera.cfg.Common.TileSize*-camera.positionPlayer.X+camera.cfg.Common.WindowWidth/2),
-			float64(camera.cfg.Common.TileSize*-camera.positionPlayer.Y+camera.cfg.Common.WindowHeight/2))
+		op.GeoM.Translate(tileSize*-camera.positionPlayer.X+windowWidth/2,
+			tileSize*-camera.positionPlayer.Y+windowHeight/2)
 		screen.DrawImage(frontImage, op)
 	}
 }

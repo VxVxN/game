@@ -11,7 +11,7 @@ type Player struct {
 	satiety int
 }
 
-func NewPlayer(position base.Position, imagePath string, x0, y0, tileSize, framesCount int) (*Player, error) {
+func NewPlayer(position base.Position, speed float64, imagePath string, x0, y0, tileSize, framesCount int) (*Player, error) {
 	animation, err := animation.NewAnimation(imagePath, x0, y0, framesCount, tileSize)
 	if err != nil {
 		return nil, err
@@ -22,6 +22,7 @@ func NewPlayer(position base.Position, imagePath string, x0, y0, tileSize, frame
 			Position:  position,
 			xp:        10000,
 			animation: animation,
+			speed:     speed,
 		},
 		satiety: 10000,
 	}, nil
@@ -33,13 +34,13 @@ func (player *Player) Move(key ebiten.Key) {
 	}
 	switch key {
 	case ebiten.KeyUp:
-		player.Position.Y--
+		player.Position.Y -= player.speed
 	case ebiten.KeyDown:
-		player.Position.Y++
+		player.Position.Y += player.speed
 	case ebiten.KeyLeft:
-		player.Position.X--
+		player.Position.X -= player.speed
 	case ebiten.KeyRight:
-		player.Position.X++
+		player.Position.X += player.speed
 	default:
 	}
 	player.animation.Update(key)

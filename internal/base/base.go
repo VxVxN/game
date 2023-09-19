@@ -1,11 +1,11 @@
 package base
 
 type Position struct {
-	X int
-	Y int
+	X float64
+	Y float64
 }
 
-func NewPosition(x, y int) Position {
+func NewPosition(x, y float64) Position {
 	return Position{
 		X: x,
 		Y: y,

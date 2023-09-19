@@ -19,12 +19,12 @@ type Chunk struct {
 }
 
 func NewChunk(chunkSize, treePerlinSeed, waterPerlinSeed int, idChunk base.Position) Chunk {
-	chunk := Chunk{ChunkID: [2]int{idChunk.X, idChunk.Y}}
+	chunk := Chunk{ChunkID: [2]int{int(idChunk.X), int(idChunk.Y)}}
 
 	var chunkXMax, chunkYMax int
 	chunkMap := make(map[int]map[int]TileType)
-	chunkXMax = idChunk.X * chunkSize
-	chunkYMax = idChunk.Y * chunkSize
+	chunkXMax = int(idChunk.X * float64(chunkSize))
+	chunkYMax = int(idChunk.Y * float64(chunkSize))
 
 	for x := 0; x < chunkXMax; x++ {
 		chunkMap[x] = make(map[int]TileType)
@@ -118,14 +118,14 @@ func GetChunkID(tileSize, x, y int) base.Position {
 
 	var ChunkID base.Position
 	if tileX < 0 {
-		ChunkID.X = int(math.Floor(tileX / float64(tileSize)))
+		ChunkID.X = math.Floor(tileX / float64(tileSize))
 	} else {
-		ChunkID.X = int(math.Ceil(tileX / float64(tileSize)))
+		ChunkID.X = math.Ceil(tileX / float64(tileSize))
 	}
 	if tileY < 0 {
-		ChunkID.Y = int(math.Floor(tileY / float64(tileSize)))
+		ChunkID.Y = math.Floor(tileY / float64(tileSize))
 	} else {
-		ChunkID.Y = int(math.Ceil(tileY / float64(tileSize)))
+		ChunkID.Y = math.Ceil(tileY / float64(tileSize))
 	}
 	if tileX == 0 {
 		ChunkID.X = 1

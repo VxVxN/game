@@ -42,16 +42,16 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	gameMap.Update()
 
 	// looking for position for player
-	playerPosition := base.NewPosition(utils.RandomIntByRange(1, cfg.Map.Width-1), utils.RandomIntByRange(1, cfg.Map.Height-1))
+	playerPosition := base.NewPosition(utils.RandomFloat64ByRange(1, float64(cfg.Map.Width-1)), utils.RandomFloat64ByRange(1, float64(cfg.Map.Height-1)))
 	for {
 		if gameMap.IsCanMove(playerPosition.X, playerPosition.Y) {
 			break
 		}
-		playerPosition = base.NewPosition(utils.RandomIntByRange(1, cfg.Map.Width-1), utils.RandomIntByRange(1, cfg.Map.Height-1))
+		playerPosition = base.NewPosition(utils.RandomFloat64ByRange(1, float64(cfg.Map.Width-1)), utils.RandomFloat64ByRange(1, float64(cfg.Map.Height-1)))
 		continue
 	}
 
-	player, err := entity.NewPlayer(playerPosition, cfg.Player.ImagePath, 0, 0, cfg.Common.TileSize, cfg.Player.FrameCount)
+	player, err := entity.NewPlayer(playerPosition, 0.5, cfg.Player.ImagePath, 0, 0, cfg.Common.TileSize, cfg.Player.FrameCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}

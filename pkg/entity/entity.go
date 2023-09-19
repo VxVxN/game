@@ -11,6 +11,7 @@ type Entity struct {
 	Position  base.Position
 	xp        int
 	animation *animation.Animation
+	speed     float64
 }
 
 func (entity *Entity) IsDead() bool {

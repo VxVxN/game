@@ -127,7 +127,9 @@ func NewMap(cfg *config.Config) (*Map, error) {
 			case utils.Tree:
 				if x < cfg.Map.Width-2 && y < cfg.Map.Height-2 { // don't touch the edge of the map
 					currentIndex := layerContainer.GetIndex()
-					layer := layerContainer.GetLayerWithoutCollisions([]base.Position{{x, y}, {x + 1, y}, {x, y + 1}, {x + 1, y + 1}})
+					xFloat := float64(x)
+					yFloat := float64(y)
+					layer := layerContainer.GetLayerWithoutCollisions([]base.Position{{xFloat, yFloat}, {xFloat + 1, yFloat}, {xFloat, yFloat + 1}, {xFloat + 1, yFloat + 1}})
 					if layerContainer.GetIndex() < 8 { // [optimization] don't make trees higher than 8 layers
 						makeTree(cfg, x, y, forestTop1, forestTop2, forestBottom1, forestBottom2, layer)
 					}
@@ -187,9 +189,9 @@ func makeTree(cfg *config.Config, x int, y int, forestTop1 *ebiten.Image, forest
 	tiles[x+1][y+1] = tile4
 }
 
-func (gameMap *Map) IsCanMove(x, y int) bool {
+func (gameMap *Map) IsCanMove(x, y float64) bool {
 	for _, layerTiles := range gameMap.layerContainer.Elements() {
-		if layerTiles[x][y].Blocked {
+		if layerTiles[int(x)][int(y)].Blocked {
 			return false
 		}
 	}
