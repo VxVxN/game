@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
+	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/animation"
+	"github.com/VxVxN/game/pkg/scriptmanager"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -20,9 +22,10 @@ type NPC struct {
 	nameFont       font.Face
 	playerPosition base.Position
 	cfg            *config.Config
+	scriptManager  *scriptmanager.ScriptManager
 }
 
-func NewNPC(name string, position base.Position, imagePath string, x0, y0, framesCount int, cfg *config.Config) (*NPC, error) {
+func NewNPC(name string, position base.Position, speed float64, imagePath string, x0, y0, framesCount int, gameMap *gamemap.Map, cfg *config.Config) (*NPC, error) {
 	animation, err := animation.NewAnimation(imagePath, x0, y0, framesCount, cfg.Common.TileSize)
 	if err != nil {
 		return nil, err
@@ -41,15 +44,19 @@ func NewNPC(name string, position base.Position, imagePath string, x0, y0, frame
 		return nil, fmt.Errorf("failed to create name face(font): %v", err)
 	}
 
+	scriptManager := scriptmanager.NewScriptManager(gameMap)
+
 	return &NPC{
 		Entity: Entity{
 			Position:  position,
 			xp:        10000,
 			animation: animation,
+			speed:     speed,
 		},
-		name:     name,
-		nameFont: nameFont,
-		cfg:      cfg,
+		name:          name,
+		nameFont:      nameFont,
+		cfg:           cfg,
+		scriptManager: scriptManager,
 	}, nil
 }
 
@@ -58,7 +65,20 @@ func (npc *NPC) Update(playerPosition base.Position) {
 	if npc.IsDead() {
 		return
 	}
-	npc.animation.SetDefaultFrame()
+	var action scriptmanager.Action
+	npc.Position, action = npc.scriptManager.Update(npc.Position, npc.speed)
+	var key ebiten.Key
+	switch action {
+	case scriptmanager.MoveUp:
+		key = ebiten.KeyUp
+	case scriptmanager.MoveDown:
+		key = ebiten.KeyDown
+	case scriptmanager.MoveLeft:
+		key = ebiten.KeyLeft
+	case scriptmanager.MoveRight:
+		key = ebiten.KeyRight
+	}
+	npc.animation.Update(key)
 }
 
 func (npc *NPC) Draw(screen *ebiten.Image) {
@@ -67,6 +87,9 @@ func (npc *NPC) Draw(screen *ebiten.Image) {
 	windowHeight := float64(npc.cfg.Common.WindowHeight)
 	x := tileSize*-npc.playerPosition.X + tileSize*npc.Position.X + windowWidth/2
 	y := tileSize*-npc.playerPosition.Y + tileSize*npc.Position.Y + windowHeight/2
-	//game.cfg.Common.WindowWidth
 	text.Draw(screen, npc.name, npc.nameFont, int(x+2), int(y), color.Black)
+}
+
+func (npc *NPC) SetScripts(scripts []*scriptmanager.Script) {
+	npc.scriptManager.SetScripts(scripts)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/entity"
 	"github.com/VxVxN/game/pkg/eventmanager"
+	"github.com/VxVxN/game/pkg/scriptmanager"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -41,26 +42,22 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	}
 	gameMap.Update()
 
-	// looking for position for player
-	playerPosition := base.NewPosition(utils.RandomFloat64ByRange(1, float64(cfg.Map.Width-1)), utils.RandomFloat64ByRange(1, float64(cfg.Map.Height-1)))
-	for {
-		if gameMap.IsCanMove(playerPosition.X, playerPosition.Y) {
-			break
-		}
-		playerPosition = base.NewPosition(utils.RandomFloat64ByRange(1, float64(cfg.Map.Width-1)), utils.RandomFloat64ByRange(1, float64(cfg.Map.Height-1)))
-		continue
-	}
-
-	player, err := entity.NewPlayer(playerPosition, 0.5, cfg.Player.ImagePath, 0, 0, cfg.Common.TileSize, cfg.Player.FrameCount)
+	playerPosition := findPosition(cfg, gameMap)
+	player, err := entity.NewPlayer(playerPosition, 0.8, cfg.Player.ImagePath, 0, 0, cfg.Common.TileSize, cfg.Player.FrameCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	npcPosition := base.NewPosition(playerPosition.X+2, playerPosition.Y)
-	npc, err := entity.NewNPC("Bob", npcPosition, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, cfg)
+	npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", npcPosition, 0.2, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
+	npc.SetScripts([]*scriptmanager.Script{
+		scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
+		scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause}),
+		scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
+	})
 
 	font, err := sfnt.Parse(goregular.TTF)
 	if err != nil {
@@ -115,6 +112,18 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	return game, nil
 }
 
+func findPosition(cfg *config.Config, gameMap *gamemap.Map) base.Position {
+	position := base.NewPosition(utils.RandomFloat64ByRange(1, float64(cfg.Map.Width-1)), utils.RandomFloat64ByRange(1, float64(cfg.Map.Height-1)))
+	for {
+		if gameMap.IsCanMove(position.X, position.Y) {
+			break
+		}
+		position = base.NewPosition(utils.RandomFloat64ByRange(1, float64(cfg.Map.Width-1)), utils.RandomFloat64ByRange(1, float64(cfg.Map.Height-1)))
+		continue
+	}
+	return position
+}
+
 func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddEvent(ebiten.KeyUp, func() {
 		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) {
@@ -163,8 +172,6 @@ func (game *Game) Update() error {
 	game.camera.AddPlayerImage(game.player.Image())
 	game.camera.UpdatePlayer(game.player.Position)
 	game.camera.UpdateEntity(game.npc.Position)
-
-	game.camera.UpdateEntity(game.npc.Position)
 	return nil
 }
 
@@ -172,7 +179,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	game.camera.Draw(screen)
 
 	if game.isShowDebugInfo {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %d, Y = %d\nLayers: %d", game.player.Position.X, game.player.Position.Y,
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %f, Y = %f\nLayers: %d", game.player.Position.X, game.player.Position.Y,
 			len(game.gameMap.FrontImages())+2)) // +2 -> gameMap.BackgroundImage() + player.Image()
 	}
 
