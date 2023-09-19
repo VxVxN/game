@@ -40,7 +40,15 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	}
 	gameMap.Update()
 
+	// looking for position for player
 	playerPosition := base.NewPosition(utils.RandomIntByRange(1, cfg.Map.Width-1), utils.RandomIntByRange(1, cfg.Map.Height-1))
+	for {
+		if gameMap.IsCanMove(playerPosition.X, playerPosition.Y) {
+			break
+		}
+		playerPosition = base.NewPosition(utils.RandomIntByRange(1, cfg.Map.Width-1), utils.RandomIntByRange(1, cfg.Map.Height-1))
+		continue
+	}
 	player, err := player.NewPlayer(playerPosition, cfg.Player.ImagePath, cfg.Common.TileSize, cfg.Player.FrameCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
@@ -90,11 +98,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		//zoom := 0.15
 		zoom := 1.0
 
-		game.player.Position.X = int(float64(game.cfg.Map.Width/2) * zoom)
-		game.player.Position.Y = int(float64(game.cfg.Map.Height/2) * zoom)
-
 		game.camera.SetZoom(zoom)
-
 	default:
 	}
 
