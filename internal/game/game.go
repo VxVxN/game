@@ -6,8 +6,8 @@ import (
 	"github.com/VxVxN/game/internal/camera"
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/internal/gamemap"
+	"github.com/VxVxN/game/pkg/entity"
 	"github.com/VxVxN/game/pkg/eventmanager"
-	"github.com/VxVxN/game/pkg/player"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -24,7 +24,8 @@ import (
 type Game struct {
 	gameMap          *gamemap.Map
 	cfg              *config.Config
-	player           *player.Player
+	player           *entity.Player
+	npc              *entity.NPC
 	eventManager     *eventmanager.EventManager
 	camera           *camera.Camera
 	globalTime       time.Time
@@ -49,7 +50,14 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		playerPosition = base.NewPosition(utils.RandomIntByRange(1, cfg.Map.Width-1), utils.RandomIntByRange(1, cfg.Map.Height-1))
 		continue
 	}
-	player, err := player.NewPlayer(playerPosition, cfg.Player.ImagePath, cfg.Common.TileSize, cfg.Player.FrameCount)
+
+	player, err := entity.NewPlayer(playerPosition, cfg.Player.ImagePath, 0, 0, cfg.Common.TileSize, cfg.Player.FrameCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create player: %v", err)
+	}
+
+	npcPosition := base.NewPosition(playerPosition.X+2, playerPosition.Y)
+	npc, err := entity.NewNPC("Bob", npcPosition, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -78,6 +86,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		gameMap:          gameMap,
 		cfg:              cfg,
 		player:           player,
+		npc:              npc,
 		globalTime:       time.Now(),
 		isShowDebugInfo:  true,
 		eventManager:     eventmanager.NewEventManager(),
@@ -87,6 +96,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	}
 
 	game.camera.AddPlayerImage(player.Image())
+	game.camera.AddEntityImage(npc.Image())
 	game.camera.AddBackgroundImage(gameMap.BackgroundImage())
 	game.camera.AddFrontImages(gameMap.FrontImages())
 
@@ -105,7 +115,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	return game, nil
 }
 
-func (game *Game) addEvents(gameMap *gamemap.Map, player *player.Player) {
+func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddEvent(ebiten.KeyUp, func() {
 		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) {
 			return
@@ -148,8 +158,13 @@ func (game *Game) Update() error {
 	game.eventManager.Update()
 	game.globalTime = time.Now()
 
+	game.npc.Update(game.player.Position)
+
 	game.camera.AddPlayerImage(game.player.Image())
-	game.camera.Update(game.player.Position)
+	game.camera.UpdatePlayer(game.player.Position)
+	game.camera.UpdateEntity(game.npc.Position)
+
+	game.camera.UpdateEntity(game.npc.Position)
 	return nil
 }
 
@@ -168,6 +183,8 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		})
 		return
 	}
+
+	game.npc.Draw(screen)
 
 	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%", game.player.XP(), game.player.Satiety()), game.statusPlayerFace, game.cfg.Common.WindowWidth/2-50, 80, color.Black)
 	game.player.DecreaseSatiety()
