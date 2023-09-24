@@ -23,16 +23,16 @@ import (
 )
 
 type Game struct {
-	gameMap          *gamemap.Map
-	cfg              *config.Config
-	player           *entity.Player
-	npc              *entity.NPC
-	eventManager     *eventmanager.EventManager
-	camera           *camera.Camera
-	globalTime       time.Time
-	statusPlayerFace font.Face
-	gameOverFace     font.Face
-	isShowDebugInfo  bool
+	gameMap         *gamemap.Map
+	cfg             *config.Config
+	player          *entity.Player
+	npc             *entity.NPC
+	eventManager    *eventmanager.EventManager
+	camera          *camera.Camera
+	globalTime      time.Time
+	gameOverFace    font.Face
+	isShowDebugInfo bool
+	isStopWorld     bool
 }
 
 func NewGame(cfg *config.Config) (*Game, error) {
@@ -43,20 +43,55 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	gameMap.Update()
 
 	playerPosition := findPosition(cfg, gameMap)
-	player, err := entity.NewPlayer(playerPosition, 0.8, cfg.Player.ImagePath, 0, 0, cfg.Common.TileSize, cfg.Player.FrameCount)
+	player, err := entity.NewPlayer(playerPosition, 0.8, 0, 0, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", npcPosition, 0.2, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	playerPosition.X++
+	//npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", playerPosition, 0.2, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
-	npc.SetScripts([]*scriptmanager.Script{
-		scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
-		scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause}),
-		scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
+	//npc.SetScripts([]*scriptmanager.Script{
+	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
+	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause}),
+	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
+	//})
+	byeReplica := &scriptmanager.PieceDialogue{
+		Replicas: []string{"Bye stranger"},
+	}
+	npc.AddDialogue(&scriptmanager.PieceDialogue{
+		Replicas: []string{"Hello stranger", "Do you want a coin?"},
+		Answers: []scriptmanager.Answer{
+			{
+				Text: "Yes",
+				Action: func() {
+					player.AddCoins(1)
+				},
+				NextPieceDialogue: byeReplica,
+			},
+			{
+				Text: "No",
+				NextPieceDialogue: &scriptmanager.PieceDialogue{
+					Replicas: []string{"Do you want two coins?"},
+					Answers: []scriptmanager.Answer{
+						{
+							Text: "Yes",
+							Action: func() {
+								player.AddCoins(2)
+							},
+							NextPieceDialogue: byeReplica,
+						},
+						{
+							Text:              "No",
+							NextPieceDialogue: byeReplica,
+						},
+					},
+				},
+			},
+		},
 	})
 
 	font, err := sfnt.Parse(goregular.TTF)
@@ -64,13 +99,6 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to parse TTF font: %v", err)
 	}
 
-	statusPlayerFace, err := opentype.NewFace(font, &opentype.FaceOptions{
-		Size: 16,
-		DPI:  72,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new status player face(font): %v", err)
-	}
 	gameOverFace, err := opentype.NewFace(font, &opentype.FaceOptions{
 		Size: 64,
 		DPI:  72,
@@ -80,16 +108,15 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	}
 
 	game := &Game{
-		gameMap:          gameMap,
-		cfg:              cfg,
-		player:           player,
-		npc:              npc,
-		globalTime:       time.Now(),
-		isShowDebugInfo:  true,
-		eventManager:     eventmanager.NewEventManager(),
-		camera:           camera.NewCamera(cfg),
-		statusPlayerFace: statusPlayerFace,
-		gameOverFace:     gameOverFace,
+		gameMap:         gameMap,
+		cfg:             cfg,
+		player:          player,
+		npc:             npc,
+		globalTime:      time.Now(),
+		isShowDebugInfo: true,
+		eventManager:    eventmanager.NewEventManager(),
+		camera:          camera.NewCamera(cfg),
+		gameOverFace:    gameOverFace,
 	}
 
 	game.camera.AddPlayerImage(player.Image())
@@ -126,28 +153,34 @@ func findPosition(cfg *config.Config, gameMap *gamemap.Map) base.Position {
 
 func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddEvent(ebiten.KeyUp, func() {
-		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) {
+		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyUp)
 	})
 	game.eventManager.AddEvent(ebiten.KeyDown, func() {
-		if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) {
+		if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyDown)
 	})
 	game.eventManager.AddEvent(ebiten.KeyRight, func() {
-		if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) {
+		if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyRight)
 	})
 	game.eventManager.AddEvent(ebiten.KeyLeft, func() {
-		if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) {
+		if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyLeft)
+	})
+	game.eventManager.AddEvent(ebiten.KeySpace, func() {
+		if utils.CanAction(game.player.Position, game.npc.Position) {
+			game.isStopWorld = !game.npc.IsEndDialogue()
+			game.npc.Trigger()
+		}
 	})
 	game.eventManager.AddEvent(ebiten.KeyTab, func() {
 		game.isShowDebugInfo = !game.isShowDebugInfo
@@ -164,14 +197,19 @@ func (game *Game) Update() error {
 	if time.Since(game.globalTime) < time.Second/time.Duration(game.cfg.Common.RefreshRateFramesPerSecond) {
 		return nil
 	}
-	game.eventManager.Update()
 	game.globalTime = time.Now()
 
 	game.npc.Update(game.player.Position)
+	game.eventManager.Update()
+	if game.isStopWorld {
+		return nil
+	}
 
 	game.camera.AddPlayerImage(game.player.Image())
 	game.camera.UpdatePlayer(game.player.Position)
 	game.camera.UpdateEntity(game.npc.Position)
+
+	game.player.DecreaseSatiety()
 	return nil
 }
 
@@ -192,9 +230,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	}
 
 	game.npc.Draw(screen)
-
-	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%", game.player.XP(), game.player.Satiety()), game.statusPlayerFace, game.cfg.Common.WindowWidth/2-50, 80, color.Black)
-	game.player.DecreaseSatiety()
+	game.player.Draw(screen)
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {

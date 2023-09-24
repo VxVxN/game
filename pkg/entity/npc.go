@@ -18,11 +18,12 @@ import (
 
 type NPC struct {
 	Entity
-	name           string
-	nameFont       font.Face
-	playerPosition base.Position
-	cfg            *config.Config
-	scriptManager  *scriptmanager.ScriptManager
+	name            string
+	nameFont        font.Face
+	playerPosition  base.Position
+	cfg             *config.Config
+	scriptManager   *scriptmanager.ScriptManager
+	dialogueManager *scriptmanager.DialogueManager
 }
 
 func NewNPC(name string, position base.Position, speed float64, imagePath string, x0, y0, framesCount int, gameMap *gamemap.Map, cfg *config.Config) (*NPC, error) {
@@ -46,6 +47,11 @@ func NewNPC(name string, position base.Position, speed float64, imagePath string
 
 	scriptManager := scriptmanager.NewScriptManager(gameMap)
 
+	dialogueManager, err := scriptmanager.NewDialogueManager()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init dialogueManager: %v", err)
+	}
+
 	return &NPC{
 		Entity: Entity{
 			Position:  position,
@@ -53,10 +59,11 @@ func NewNPC(name string, position base.Position, speed float64, imagePath string
 			animation: animation,
 			speed:     speed,
 		},
-		name:          name,
-		nameFont:      nameFont,
-		cfg:           cfg,
-		scriptManager: scriptManager,
+		name:            name,
+		nameFont:        nameFont,
+		cfg:             cfg,
+		scriptManager:   scriptManager,
+		dialogueManager: dialogueManager,
 	}, nil
 }
 
@@ -79,6 +86,7 @@ func (npc *NPC) Update(playerPosition base.Position) {
 		key = ebiten.KeyRight
 	}
 	npc.animation.Update(key)
+	npc.dialogueManager.Update()
 }
 
 func (npc *NPC) Draw(screen *ebiten.Image) {
@@ -88,8 +96,22 @@ func (npc *NPC) Draw(screen *ebiten.Image) {
 	x := tileSize*-npc.playerPosition.X + tileSize*npc.Position.X + windowWidth/2
 	y := tileSize*-npc.playerPosition.Y + tileSize*npc.Position.Y + windowHeight/2
 	text.Draw(screen, npc.name, npc.nameFont, int(x+2), int(y), color.Black)
+
+	npc.dialogueManager.Draw(screen, x, y)
 }
 
 func (npc *NPC) SetScripts(scripts []*scriptmanager.Script) {
 	npc.scriptManager.SetScripts(scripts)
+}
+
+func (npc *NPC) Trigger() {
+	npc.dialogueManager.Trigger()
+}
+
+func (npc *NPC) IsEndDialogue() bool {
+	return npc.dialogueManager.IsEndDialogue()
+}
+
+func (npc *NPC) AddDialogue(dialogue *scriptmanager.PieceDialogue) {
+	npc.dialogueManager.AddDialogue(dialogue)
 }

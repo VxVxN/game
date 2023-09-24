@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/VxVxN/game/internal/base"
 	"math/rand"
 )
 
@@ -14,4 +15,12 @@ func RandomFloat64ByRange(min, max float64) float64 {
 
 func RandomFloatBetween0And1() float64 {
 	return 0 + rand.Float64()*(1-0)
+}
+
+func CanAction(playerPosition, dstPosition base.Position) bool {
+	return int(playerPosition.X+1) == int(dstPosition.X) && int(playerPosition.Y) == int(dstPosition.Y) ||
+		int(playerPosition.X-1) == int(dstPosition.X) && int(playerPosition.Y) == int(dstPosition.Y) ||
+		int(playerPosition.X) == int(dstPosition.X) && int(playerPosition.Y+1) == int(dstPosition.Y) ||
+		int(playerPosition.X) == int(dstPosition.X) && int(playerPosition.Y-1) == int(dstPosition.Y) ||
+		int(playerPosition.X) == int(dstPosition.X) && int(playerPosition.Y) == int(dstPosition.Y)
 }

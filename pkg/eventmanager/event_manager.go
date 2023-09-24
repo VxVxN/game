@@ -22,6 +22,7 @@ var supportedKeys = []ebiten.Key{
 	ebiten.KeyRight,
 	ebiten.KeyTab,
 	ebiten.KeyEscape,
+	ebiten.KeySpace,
 }
 
 func (eventManager *EventManager) Update() {
@@ -33,7 +34,7 @@ func (eventManager *EventManager) Update() {
 		}
 	}
 	events, ok := eventManager.events[key]
-	if !ok {
+	if !ok && eventManager.defaultEvent != nil {
 		eventManager.defaultEvent()
 		return // we don't have events
 	}

@@ -1,20 +1,44 @@
 package entity
 
 import (
+	"fmt"
 	"github.com/VxVxN/game/internal/base"
+	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/animation"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
+	"image/color"
 )
 
 type Player struct {
 	Entity
 	satiety int
+	coins   int
+	face    font.Face
+	cfg     *config.Config
 }
 
-func NewPlayer(position base.Position, speed float64, imagePath string, x0, y0, tileSize, framesCount int) (*Player, error) {
-	animation, err := animation.NewAnimation(imagePath, x0, y0, framesCount, tileSize)
+func NewPlayer(position base.Position, speed float64, x0, y0 int, cfg *config.Config) (*Player, error) {
+	animation, err := animation.NewAnimation(cfg.Player.ImagePath, x0, y0, cfg.Player.FrameCount, cfg.Common.TileSize)
 	if err != nil {
 		return nil, err
+	}
+
+	font, err := sfnt.Parse(goregular.TTF)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse TTF font: %v", err)
+	}
+
+	face, err := opentype.NewFace(font, &opentype.FaceOptions{
+		Size: 16,
+		DPI:  72,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new status player face(font): %v", err)
 	}
 
 	return &Player{
@@ -25,6 +49,8 @@ func NewPlayer(position base.Position, speed float64, imagePath string, x0, y0, 
 			speed:     speed,
 		},
 		satiety: 10000,
+		face:    face,
+		cfg:     cfg,
 	}, nil
 }
 
@@ -63,4 +89,15 @@ func (player *Player) DecreaseSatiety() {
 	} else {
 		player.xp--
 	}
+}
+
+func (player *Player) AddCoins(coins int) {
+	if player.IsDead() {
+		return
+	}
+	player.coins += coins
+}
+
+func (player *Player) Draw(screen *ebiten.Image) {
+	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Coins: %d", player.XP(), player.Satiety(), player.coins), player.face, player.cfg.Common.WindowWidth/2-80, 80, color.Black)
 }
