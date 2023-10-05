@@ -47,7 +47,7 @@ func NewNPC(name string, position base.Position, speed float64, imagePath string
 
 	scriptManager := scriptmanager.NewScriptManager(gameMap)
 
-	dialogueManager, err := scriptmanager.NewDialogueManager()
+	dialogueManager, err := scriptmanager.NewDialogueManager(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init dialogueManager: %v", err)
 	}

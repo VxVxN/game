@@ -66,7 +66,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		Replicas: []string{"Hello stranger", "Do you want a coin?"},
 		Answers: []scriptmanager.Answer{
 			{
-				Text: "Yes",
+				Text: "Yes, of course",
 				Action: func() {
 					player.AddCoins(1)
 				},
