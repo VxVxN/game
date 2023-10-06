@@ -3,6 +3,7 @@ package camera
 import (
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
+	"github.com/VxVxN/game/pkg/item"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -15,6 +16,7 @@ type Camera struct {
 	backgroundImage *ebiten.Image
 	frontImages     []*ebiten.Image
 	zoom            float64
+	items           []*item.Item
 }
 
 func NewCamera(cfg *config.Config) *Camera {
@@ -45,11 +47,17 @@ func (camera *Camera) Draw(screen *ebiten.Image) {
 	screen.DrawImage(camera.backgroundImage, op)
 
 	for _, position := range camera.positionEntity {
-		_ = position
 		op = &ebiten.DrawImageOptions{GeoM: geoM}
 		op.GeoM.Translate(tileSize*-camera.positionPlayer.X+tileSize*position.X+windowWidth/2,
 			tileSize*-camera.positionPlayer.Y+tileSize*position.Y+windowHeight/2)
 		screen.DrawImage(camera.entityImage, op)
+	}
+
+	for _, gameItem := range camera.items {
+		op = &ebiten.DrawImageOptions{GeoM: geoM}
+		op.GeoM.Translate(tileSize*-camera.positionPlayer.X+tileSize*gameItem.Position().X+windowWidth/2,
+			tileSize*-camera.positionPlayer.Y+tileSize*gameItem.Position().Y+windowHeight/2)
+		gameItem.Draw(screen, op)
 	}
 
 	op = &ebiten.DrawImageOptions{GeoM: geoM}
@@ -74,6 +82,10 @@ func (camera *Camera) AddPlayerImage(image *ebiten.Image) {
 
 func (camera *Camera) AddEntityImage(image *ebiten.Image) {
 	camera.entityImage = image
+}
+
+func (camera *Camera) SetItems(items []*item.Item) {
+	camera.items = items
 }
 
 func (camera *Camera) AddFrontImages(images []*ebiten.Image) {

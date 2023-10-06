@@ -5,6 +5,7 @@ import (
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/animation"
+	"github.com/VxVxN/game/pkg/item"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -20,6 +21,7 @@ type Player struct {
 	coins   int
 	face    font.Face
 	cfg     *config.Config
+	items   []*item.Item
 }
 
 func NewPlayer(position base.Position, speed float64, x0, y0 int, cfg *config.Config) (*Player, error) {
@@ -100,4 +102,11 @@ func (player *Player) AddCoins(coins int) {
 
 func (player *Player) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Coins: %d", player.XP(), player.Satiety(), player.coins), player.face, player.cfg.Common.WindowWidth/2-80, 80, color.Black)
+}
+
+func (player *Player) TakeItem(item *item.Item) {
+	if player.IsDead() {
+		return
+	}
+	player.items = append(player.items, item)
 }

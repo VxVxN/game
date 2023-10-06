@@ -8,6 +8,7 @@ import (
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/entity"
 	"github.com/VxVxN/game/pkg/eventmanager"
+	"github.com/VxVxN/game/pkg/item"
 	"github.com/VxVxN/game/pkg/scriptmanager"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -31,6 +32,7 @@ type Game struct {
 	camera          *camera.Camera
 	globalTime      time.Time
 	gameOverFace    font.Face
+	items           []*item.Item
 	isShowDebugInfo bool
 	isStopWorld     bool
 }
@@ -48,11 +50,20 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	playerPosition.X++
-	//npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", playerPosition, 0.2, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", npcPosition, 0.2, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
+	}
+	playerPosition.X++
+	axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create axe item: %v", err)
+	}
+	playerPosition.X++
+	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
 	//npc.SetScripts([]*scriptmanager.Script{
 	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
@@ -117,12 +128,14 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		eventManager:    eventmanager.NewEventManager(),
 		camera:          camera.NewCamera(cfg),
 		gameOverFace:    gameOverFace,
+		items:           []*item.Item{axeItem, keyItem},
 	}
 
 	game.camera.AddPlayerImage(player.Image())
 	game.camera.AddEntityImage(npc.Image())
 	game.camera.AddBackgroundImage(gameMap.BackgroundImage())
 	game.camera.AddFrontImages(gameMap.FrontImages())
+	game.camera.SetItems([]*item.Item{axeItem, keyItem})
 
 	game.addEvents(gameMap, player)
 
@@ -180,6 +193,12 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 		if utils.CanAction(game.player.Position, game.npc.Position) {
 			game.isStopWorld = !game.npc.IsEndDialogue()
 			game.npc.Trigger()
+		}
+		for _, item := range game.items {
+			if utils.CanAction(game.player.Position, item.Position()) {
+				item.Trigger()
+				game.player.TakeItem(item)
+			}
 		}
 	})
 	game.eventManager.AddEvent(ebiten.KeyTab, func() {
