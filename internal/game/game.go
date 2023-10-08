@@ -24,15 +24,16 @@ import (
 )
 
 type Game struct {
-	gameMap         *gamemap.Map
-	cfg             *config.Config
-	player          *entity.Player
-	npc             *entity.NPC
-	eventManager    *eventmanager.EventManager
-	camera          *camera.Camera
-	globalTime      time.Time
-	gameOverFace    font.Face
-	items           []*item.Item
+	gameMap      *gamemap.Map
+	cfg          *config.Config
+	player       *entity.Player
+	npc          *entity.NPC
+	eventManager *eventmanager.EventManager
+	camera       *camera.Camera
+	globalTime   time.Time
+	gameOverFace font.Face
+	items        []*item.Item
+	//inventory       *inventory.Inventory
 	isShowDebugInfo bool
 	isStopWorld     bool
 }
@@ -45,13 +46,13 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	gameMap.Update()
 
 	playerPosition := findPosition(cfg, gameMap)
-	player, err := entity.NewPlayer(playerPosition, 0.8, 0, 0, cfg)
+	player, err := entity.NewPlayer(playerPosition, 0.2, 0, 0, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
 	npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", npcPosition, 0.2, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	npc, err := entity.NewNPC("Bob", npcPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -129,6 +130,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		camera:          camera.NewCamera(cfg),
 		gameOverFace:    gameOverFace,
 		items:           []*item.Item{axeItem, keyItem},
+		//inventory:       inventory.NewInventory(cfg),
 	}
 
 	game.camera.AddPlayerImage(player.Image())
@@ -165,31 +167,31 @@ func findPosition(cfg *config.Config, gameMap *gamemap.Map) base.Position {
 }
 
 func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
-	game.eventManager.AddEvent(ebiten.KeyUp, func() {
+	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
 		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyUp)
 	})
-	game.eventManager.AddEvent(ebiten.KeyDown, func() {
+	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
 		if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyDown)
 	})
-	game.eventManager.AddEvent(ebiten.KeyRight, func() {
+	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
 		if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyRight)
 	})
-	game.eventManager.AddEvent(ebiten.KeyLeft, func() {
+	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
 		if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) || game.isStopWorld {
 			return
 		}
 		player.Move(ebiten.KeyLeft)
 	})
-	game.eventManager.AddEvent(ebiten.KeySpace, func() {
+	game.eventManager.AddPressedEvent(ebiten.KeySpace, func() {
 		if utils.CanAction(game.player.Position, game.npc.Position) {
 			game.isStopWorld = !game.npc.IsEndDialogue()
 			game.npc.Trigger()
@@ -201,10 +203,13 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 			}
 		}
 	})
-	game.eventManager.AddEvent(ebiten.KeyTab, func() {
+	game.eventManager.AddPressedEvent(ebiten.KeyTab, func() {
 		game.isShowDebugInfo = !game.isShowDebugInfo
 	})
-	game.eventManager.AddEvent(ebiten.KeyEscape, func() {
+	//game.eventManager.AddEvent(ebiten.KeyI, func() {
+	//	game.inventory.OnOff()
+	//})
+	game.eventManager.AddPressedEvent(ebiten.KeyEscape, func() {
 		os.Exit(0) // todo add normal game end processing
 	})
 	game.eventManager.SetDefaultEvent(func() {
@@ -213,13 +218,13 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 }
 
 func (game *Game) Update() error {
+	game.eventManager.Update()
+	game.npc.Update(game.player.Position)
 	if time.Since(game.globalTime) < time.Second/time.Duration(game.cfg.Common.RefreshRateFramesPerSecond) {
 		return nil
 	}
 	game.globalTime = time.Now()
 
-	game.npc.Update(game.player.Position)
-	game.eventManager.Update()
 	if game.isStopWorld {
 		return nil
 	}
@@ -250,6 +255,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 
 	game.npc.Draw(screen)
 	game.player.Draw(screen)
+	//game.inventory.Draw(screen)
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {

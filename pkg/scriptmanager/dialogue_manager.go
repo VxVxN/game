@@ -10,13 +10,11 @@ import (
 	"golang.org/x/image/font/opentype"
 	"image/color"
 	"os"
-	"time"
 )
 
 type DialogueManager struct {
 	dialogue *PieceDialogue
 
-	globalTime   time.Time
 	face         font.Face
 	eventManager *eventmanager.EventManager
 	cfg          *config.Config
@@ -44,19 +42,27 @@ func NewDialogueManager(cfg *config.Config) (*DialogueManager, error) {
 	eventManager := eventmanager.NewEventManager()
 
 	manager := &DialogueManager{
-		globalTime:   time.Now(),
 		face:         face,
 		eventManager: eventManager,
 		cfg:          cfg,
 	}
 
-	eventManager.AddEvent(ebiten.KeyUp, func() {
+	eventManager.AddPressedEvent(ebiten.KeyUp, func() {
+		if !manager.isRun {
+			return
+		}
 		manager.dialogue.NextAnswer()
 	})
-	eventManager.AddEvent(ebiten.KeyDown, func() {
+	eventManager.AddPressedEvent(ebiten.KeyDown, func() {
+		if !manager.isRun {
+			return
+		}
 		manager.dialogue.BeforeAnswer()
 	})
-	eventManager.AddEvent(ebiten.KeySpace, func() {
+	eventManager.AddPressedEvent(ebiten.KeySpace, func() {
+		if !manager.isRun {
+			return
+		}
 		if manager.dialogue.NeedAnswer() {
 			manager.dialogue.DoAnswer()
 			if manager.IsEndDialogue() {
@@ -113,17 +119,10 @@ func (manager *DialogueManager) Trigger() {
 	if manager.dialogue == nil || manager.IsEndDialogue() {
 		return
 	}
-	if !manager.isRun {
-		manager.globalTime = time.Now()
-	}
 	manager.isRun = true
 }
 
 func (manager *DialogueManager) Update() {
-	if time.Since(manager.globalTime) < time.Second/time.Duration(5) || !manager.isRun {
-		return
-	}
-	manager.globalTime = time.Now()
 	manager.eventManager.Update()
 }
 
