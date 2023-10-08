@@ -23,7 +23,7 @@ type NPC struct {
 	playerPosition  base.Position
 	cfg             *config.Config
 	scriptManager   *scriptmanager.ScriptManager
-	dialogueManager *scriptmanager.DialogueManager
+	DialogueManager *scriptmanager.DialogueManager
 }
 
 func NewNPC(name string, position base.Position, speed float64, imagePath string, x0, y0, framesCount int, gameMap *gamemap.Map, cfg *config.Config) (*NPC, error) {
@@ -49,7 +49,7 @@ func NewNPC(name string, position base.Position, speed float64, imagePath string
 
 	dialogueManager, err := scriptmanager.NewDialogueManager(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init dialogueManager: %v", err)
+		return nil, fmt.Errorf("failed to init DialogueManager: %v", err)
 	}
 
 	return &NPC{
@@ -63,7 +63,7 @@ func NewNPC(name string, position base.Position, speed float64, imagePath string
 		nameFont:        nameFont,
 		cfg:             cfg,
 		scriptManager:   scriptManager,
-		dialogueManager: dialogueManager,
+		DialogueManager: dialogueManager,
 	}, nil
 }
 
@@ -86,7 +86,6 @@ func (npc *NPC) Update(playerPosition base.Position) {
 		key = ebiten.KeyRight
 	}
 	npc.animation.Update(key)
-	npc.dialogueManager.Update()
 }
 
 func (npc *NPC) Draw(screen *ebiten.Image) {
@@ -97,7 +96,7 @@ func (npc *NPC) Draw(screen *ebiten.Image) {
 	y := tileSize*-npc.playerPosition.Y + tileSize*npc.Position.Y + windowHeight/2
 	text.Draw(screen, npc.name, npc.nameFont, int(x+2), int(y), color.Black)
 
-	npc.dialogueManager.Draw(screen, x, y)
+	npc.DialogueManager.Draw(screen, x, y)
 }
 
 func (npc *NPC) SetScripts(scripts []*scriptmanager.Script) {
@@ -105,13 +104,13 @@ func (npc *NPC) SetScripts(scripts []*scriptmanager.Script) {
 }
 
 func (npc *NPC) Trigger() {
-	npc.dialogueManager.Trigger()
+	npc.DialogueManager.Trigger()
 }
 
 func (npc *NPC) IsEndDialogue() bool {
-	return npc.dialogueManager.IsEndDialogue()
+	return npc.DialogueManager.IsEndDialogue()
 }
 
 func (npc *NPC) AddDialogue(dialogue *scriptmanager.PieceDialogue) {
-	npc.dialogueManager.AddDialogue(dialogue)
+	npc.DialogueManager.AddDialogue(dialogue)
 }

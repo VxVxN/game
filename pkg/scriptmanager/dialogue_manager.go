@@ -3,7 +3,6 @@ package scriptmanager
 import (
 	"fmt"
 	"github.com/VxVxN/game/internal/config"
-	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/label"
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/font"
@@ -13,12 +12,11 @@ import (
 )
 
 type DialogueManager struct {
-	dialogue *PieceDialogue
+	*PieceDialogue
 
-	face         font.Face
-	eventManager *eventmanager.EventManager
-	cfg          *config.Config
-	isRun        bool
+	face  font.Face
+	cfg   *config.Config
+	isRun bool
 }
 
 func NewDialogueManager(cfg *config.Config) (*DialogueManager, error) {
@@ -39,40 +37,10 @@ func NewDialogueManager(cfg *config.Config) (*DialogueManager, error) {
 		return nil, fmt.Errorf("failed to create face(font): %v", err)
 	}
 
-	eventManager := eventmanager.NewEventManager()
-
 	manager := &DialogueManager{
-		face:         face,
-		eventManager: eventManager,
-		cfg:          cfg,
+		face: face,
+		cfg:  cfg,
 	}
-
-	eventManager.AddPressedEvent(ebiten.KeyUp, func() {
-		if !manager.isRun {
-			return
-		}
-		manager.dialogue.NextAnswer()
-	})
-	eventManager.AddPressedEvent(ebiten.KeyDown, func() {
-		if !manager.isRun {
-			return
-		}
-		manager.dialogue.BeforeAnswer()
-	})
-	eventManager.AddPressedEvent(ebiten.KeySpace, func() {
-		if !manager.isRun {
-			return
-		}
-		if manager.dialogue.NeedAnswer() {
-			manager.dialogue.DoAnswer()
-			if manager.IsEndDialogue() {
-				return
-			}
-			manager.dialogue = manager.dialogue.NextPieceDialogue()
-			return
-		}
-		manager.dialogue.NextReplica()
-	})
 
 	return manager, nil
 }
@@ -89,18 +57,18 @@ func (manager *DialogueManager) Draw(screen *ebiten.Image, x, y float64) {
 	replicLabel.Height = y - 32
 	replicLabel.AlignVertical = label.AlignVerticalBottom
 	replicLabel.AlignHorizontal = label.AlignHorizontalCenter
-	replicLabel.Text = manager.dialogue.CurrentReplica()
+	replicLabel.Text = manager.CurrentReplica()
 	//replicLabel.ContainerColor = color.RGBA{R: 100, G: 200, B: 100, A: 160}
 	replicLabel.Draw(screen)
 
-	if !manager.dialogue.NeedAnswer() {
+	if !manager.NeedAnswer() {
 		return
 	}
 
 	answerLabel := label.NewLabel(manager.face)
-	for index, answer := range manager.dialogue.Answers {
+	for index, answer := range manager.Answers {
 		answerColor := color.RGBA{R: 0, G: 0, B: 0, A: 255}
-		if manager.dialogue.IsActiveAnswer(index) {
+		if manager.IsActiveAnswer(index) {
 			answerColor = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 		}
 		answerLabel.X = 0
@@ -116,20 +84,16 @@ func (manager *DialogueManager) Draw(screen *ebiten.Image, x, y float64) {
 }
 
 func (manager *DialogueManager) Trigger() {
-	if manager.dialogue == nil || manager.IsEndDialogue() {
+	if manager == nil || manager.IsEndDialogue() {
 		return
 	}
 	manager.isRun = true
 }
 
-func (manager *DialogueManager) Update() {
-	manager.eventManager.Update()
-}
-
 func (manager *DialogueManager) IsEndDialogue() bool {
-	return manager.dialogue.isEndDialogue
+	return manager.isEndDialogue
 }
 
 func (manager *DialogueManager) AddDialogue(dialogue *PieceDialogue) {
-	manager.dialogue = dialogue
+	manager.PieceDialogue = dialogue
 }

@@ -34,9 +34,16 @@ type Game struct {
 	gameOverFace font.Face
 	items        []*item.Item
 	//inventory       *inventory.Inventory
+	stage           Stage
 	isShowDebugInfo bool
-	isStopWorld     bool
 }
+
+type Stage int
+
+const (
+	GameStage Stage = iota
+	DialogutStage
+)
 
 func NewGame(cfg *config.Config) (*Game, error) {
 	gameMap, err := gamemap.NewMap(cfg)
@@ -51,8 +58,8 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", npcPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	//npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", playerPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -131,6 +138,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		gameOverFace:    gameOverFace,
 		items:           []*item.Item{axeItem, keyItem},
 		//inventory:       inventory.NewInventory(cfg),
+		stage: GameStage,
 	}
 
 	game.camera.AddPlayerImage(player.Image())
@@ -168,39 +176,83 @@ func findPosition(cfg *config.Config, gameMap *gamemap.Map) base.Position {
 
 func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
-		if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) || game.isStopWorld {
-			return
+		switch game.stage {
+		case GameStage:
+			if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) {
+				return
+			}
+			player.Move(ebiten.KeyUp)
+		case DialogutStage:
 		}
-		player.Move(ebiten.KeyUp)
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyUp, func() {
+		switch game.stage {
+		case GameStage:
+		case DialogutStage:
+			game.npc.DialogueManager.NextAnswer()
+		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
-		if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) || game.isStopWorld {
-			return
+		switch game.stage {
+		case GameStage:
+			if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) {
+				return
+			}
+			player.Move(ebiten.KeyDown)
+		case DialogutStage:
 		}
-		player.Move(ebiten.KeyDown)
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyDown, func() {
+		switch game.stage {
+		case GameStage:
+		case DialogutStage:
+			game.npc.DialogueManager.BeforeAnswer()
+		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
-		if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) || game.isStopWorld {
-			return
+		switch game.stage {
+		case GameStage:
+			if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) {
+				return
+			}
+			player.Move(ebiten.KeyRight)
+		case DialogutStage:
 		}
-		player.Move(ebiten.KeyRight)
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
-		if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) || game.isStopWorld {
-			return
+		switch game.stage {
+		case GameStage:
+			if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) {
+				return
+			}
+			player.Move(ebiten.KeyLeft)
+		case DialogutStage:
 		}
-		player.Move(ebiten.KeyLeft)
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeySpace, func() {
-		if utils.CanAction(game.player.Position, game.npc.Position) {
-			game.isStopWorld = !game.npc.IsEndDialogue()
-			game.npc.Trigger()
-		}
-		for _, item := range game.items {
-			if utils.CanAction(game.player.Position, item.Position()) {
-				item.Trigger()
-				game.player.TakeItem(item)
+		switch game.stage {
+		case GameStage:
+			if utils.CanAction(game.player.Position, game.npc.Position) && !game.npc.DialogueManager.IsEndDialogue() {
+				game.npc.Trigger()
+				game.stage = DialogutStage
 			}
+			for _, item := range game.items {
+				if utils.CanAction(game.player.Position, item.Position()) {
+					item.Trigger()
+					game.player.TakeItem(item)
+				}
+			}
+		case DialogutStage:
+			if game.npc.DialogueManager.NeedAnswer() {
+				game.npc.DialogueManager.DoAnswer()
+				game.npc.DialogueManager.PieceDialogue = game.npc.DialogueManager.NextPieceDialogue()
+				if game.npc.DialogueManager.IsEndDialogue() {
+					game.stage = GameStage
+					return
+				}
+				return
+			}
+			game.npc.DialogueManager.NextReplica()
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyTab, func() {
@@ -224,10 +276,6 @@ func (game *Game) Update() error {
 		return nil
 	}
 	game.globalTime = time.Now()
-
-	if game.isStopWorld {
-		return nil
-	}
 
 	game.camera.AddPlayerImage(game.player.Image())
 	game.camera.UpdatePlayer(game.player.Position)
