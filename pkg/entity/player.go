@@ -110,3 +110,7 @@ func (player *Player) TakeItem(item *item.Item) {
 	}
 	player.items = append(player.items, item)
 }
+
+func (player *Player) Items() []*item.Item {
+	return player.items
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/entity"
 	"github.com/VxVxN/game/pkg/eventmanager"
+	"github.com/VxVxN/game/pkg/inventory"
 	"github.com/VxVxN/game/pkg/item"
 	"github.com/VxVxN/game/pkg/scriptmanager"
 	"github.com/VxVxN/game/pkg/utils"
@@ -24,16 +25,16 @@ import (
 )
 
 type Game struct {
-	gameMap      *gamemap.Map
-	cfg          *config.Config
-	player       *entity.Player
-	npc          *entity.NPC
-	eventManager *eventmanager.EventManager
-	camera       *camera.Camera
-	globalTime   time.Time
-	gameOverFace font.Face
-	items        []*item.Item
-	//inventory       *inventory.Inventory
+	gameMap         *gamemap.Map
+	cfg             *config.Config
+	player          *entity.Player
+	npc             *entity.NPC
+	eventManager    *eventmanager.EventManager
+	camera          *camera.Camera
+	globalTime      time.Time
+	gameOverFace    font.Face
+	items           []*item.Item
+	inventory       *inventory.Inventory
 	stage           Stage
 	isShowDebugInfo bool
 }
@@ -42,7 +43,8 @@ type Stage int
 
 const (
 	GameStage Stage = iota
-	DialogutStage
+	DialogueStage
+	InventoryStage
 )
 
 func NewGame(cfg *config.Config) (*Game, error) {
@@ -58,8 +60,8 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	//npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", playerPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", npcPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
@@ -137,8 +139,8 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		camera:          camera.NewCamera(cfg),
 		gameOverFace:    gameOverFace,
 		items:           []*item.Item{axeItem, keyItem},
-		//inventory:       inventory.NewInventory(cfg),
-		stage: GameStage,
+		inventory:       inventory.NewInventory(cfg),
+		stage:           GameStage,
 	}
 
 	game.camera.AddPlayerImage(player.Image())
@@ -182,13 +184,11 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				return
 			}
 			player.Move(ebiten.KeyUp)
-		case DialogutStage:
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyUp, func() {
 		switch game.stage {
-		case GameStage:
-		case DialogutStage:
+		case DialogueStage:
 			game.npc.DialogueManager.NextAnswer()
 		}
 	})
@@ -199,13 +199,11 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				return
 			}
 			player.Move(ebiten.KeyDown)
-		case DialogutStage:
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyDown, func() {
 		switch game.stage {
-		case GameStage:
-		case DialogutStage:
+		case DialogueStage:
 			game.npc.DialogueManager.BeforeAnswer()
 		}
 	})
@@ -216,7 +214,6 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				return
 			}
 			player.Move(ebiten.KeyRight)
-		case DialogutStage:
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
@@ -226,7 +223,6 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				return
 			}
 			player.Move(ebiten.KeyLeft)
-		case DialogutStage:
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeySpace, func() {
@@ -234,7 +230,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 		case GameStage:
 			if utils.CanAction(game.player.Position, game.npc.Position) && !game.npc.DialogueManager.IsEndDialogue() {
 				game.npc.Trigger()
-				game.stage = DialogutStage
+				game.stage = DialogueStage
 			}
 			for _, item := range game.items {
 				if utils.CanAction(game.player.Position, item.Position()) {
@@ -242,7 +238,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 					game.player.TakeItem(item)
 				}
 			}
-		case DialogutStage:
+		case DialogueStage:
 			if game.npc.DialogueManager.NeedAnswer() {
 				game.npc.DialogueManager.DoAnswer()
 				game.npc.DialogueManager.PieceDialogue = game.npc.DialogueManager.NextPieceDialogue()
@@ -258,9 +254,17 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressedEvent(ebiten.KeyTab, func() {
 		game.isShowDebugInfo = !game.isShowDebugInfo
 	})
-	//game.eventManager.AddEvent(ebiten.KeyI, func() {
-	//	game.inventory.OnOff()
-	//})
+	game.eventManager.AddPressedEvent(ebiten.KeyI, func() {
+		switch game.stage {
+		case GameStage:
+			game.inventory.OnOff()
+			game.inventory.Update(game.player.Items())
+			game.stage = InventoryStage
+		case InventoryStage:
+			game.inventory.OnOff()
+			game.stage = GameStage
+		}
+	})
 	game.eventManager.AddPressedEvent(ebiten.KeyEscape, func() {
 		os.Exit(0) // todo add normal game end processing
 	})
@@ -303,7 +307,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 
 	game.npc.Draw(screen)
 	game.player.Draw(screen)
-	//game.inventory.Draw(screen)
+	game.inventory.Draw(screen)
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {

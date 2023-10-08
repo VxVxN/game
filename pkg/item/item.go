@@ -48,3 +48,7 @@ func (item *Item) Trigger() {
 func (item *Item) Position() base.Position {
 	return item.position
 }
+
+func (item *Item) Image() *ebiten.Image {
+	return item.image
+}
