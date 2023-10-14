@@ -106,7 +106,7 @@ func NewMap(cfg *config.Config) (*Map, error) {
 			tile := MapTile{
 				PixelX:    x * cfg.Common.TileSize,
 				PixelY:    y * cfg.Common.TileSize,
-				Invisible: true,
+				Invisible: false,
 			}
 
 			if existTile(tiles, x, y) {
@@ -218,6 +218,9 @@ func (gameMap *Map) prepareImage(backgroundImage *ebiten.Image, layerTiles Layer
 			}
 			tile := layerTiles[x][y]
 
+			if tile.Invisible {
+				continue
+			}
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(tile.PixelX), float64(tile.PixelY))
 			backgroundImage.DrawImage(tile.Image, op)
