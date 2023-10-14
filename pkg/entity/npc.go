@@ -107,10 +107,6 @@ func (npc *NPC) Trigger() {
 	npc.DialogueManager.Trigger()
 }
 
-func (npc *NPC) IsEndDialogue() bool {
-	return npc.DialogueManager.IsEndDialogue()
-}
-
 func (npc *NPC) AddDialogue(dialogue *scriptmanager.PieceDialogue) {
 	npc.DialogueManager.AddDialogue(dialogue)
 }

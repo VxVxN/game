@@ -12,6 +12,7 @@ import (
 )
 
 type DialogueManager struct {
+	firstPieceDialogue *PieceDialogue
 	*PieceDialogue
 
 	face  font.Face
@@ -46,7 +47,7 @@ func NewDialogueManager(cfg *config.Config) (*DialogueManager, error) {
 }
 
 func (manager *DialogueManager) Draw(screen *ebiten.Image, x, y float64) {
-	if !manager.isRun || manager.IsEndDialogue() {
+	if !manager.isRun || manager.IsEndDialogue {
 		return
 	}
 
@@ -84,16 +85,20 @@ func (manager *DialogueManager) Draw(screen *ebiten.Image, x, y float64) {
 }
 
 func (manager *DialogueManager) Trigger() {
-	if manager == nil || manager.IsEndDialogue() {
+	if manager == nil || !manager.CanStartDialogue {
 		return
 	}
 	manager.isRun = true
-}
-
-func (manager *DialogueManager) IsEndDialogue() bool {
-	return manager.isEndDialogue
+	manager.PieceDialogue = manager.firstPieceDialogue
+	manager.PieceDialogue.needAnswer = false
+	manager.PieceDialogue.IsEndDialogue = false
+	manager.PieceDialogue.currentReplica = 0
+	manager.PieceDialogue.activeAnswer = 0
 }
 
 func (manager *DialogueManager) AddDialogue(dialogue *PieceDialogue) {
 	manager.PieceDialogue = dialogue
+	if manager.firstPieceDialogue == nil {
+		manager.firstPieceDialogue = manager.PieceDialogue
+	}
 }

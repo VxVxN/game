@@ -6,6 +6,7 @@ import (
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/animation"
 	"github.com/VxVxN/game/pkg/item"
+	"github.com/VxVxN/game/pkg/quest"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -22,6 +23,7 @@ type Player struct {
 	face    font.Face
 	cfg     *config.Config
 	items   []*item.Item
+	quests  []*quest.Quest
 }
 
 func NewPlayer(position base.Position, speed float64, x0, y0 int, cfg *config.Config) (*Player, error) {
@@ -82,14 +84,19 @@ func (player *Player) Satiety() int {
 	return player.satiety / 100
 }
 
-func (player *Player) DecreaseSatiety() {
+func (player *Player) Update() {
 	if player.IsDead() {
 		return
 	}
+
 	if player.satiety > 0 {
 		player.satiety--
 	} else {
 		player.xp--
+	}
+
+	for _, quest := range player.quests {
+		quest.UpdateProgress(player.items)
 	}
 }
 
@@ -113,4 +120,15 @@ func (player *Player) TakeItem(item *item.Item) {
 
 func (player *Player) Items() []*item.Item {
 	return player.items
+}
+
+func (player *Player) TakeQuest(quest *quest.Quest) {
+	if player.IsDead() {
+		return
+	}
+	player.quests = append(player.quests, quest)
+}
+
+func (player *Player) Quests() []*quest.Quest {
+	return player.quests
 }

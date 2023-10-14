@@ -11,6 +11,7 @@ import (
 	"github.com/VxVxN/game/pkg/inventory"
 	"github.com/VxVxN/game/pkg/item"
 	"github.com/VxVxN/game/pkg/menu"
+	"github.com/VxVxN/game/pkg/quest"
 	"github.com/VxVxN/game/pkg/scriptmanager"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -36,6 +37,7 @@ type Game struct {
 	gameOverFace    font.Face
 	items           []*item.Item
 	inventory       *inventory.Inventory
+	questsMenu      *quest.QuestsMenu
 	stage           Stage
 	menu            *menu.Menu
 	isShowDebugInfo bool
@@ -47,6 +49,7 @@ const (
 	GameStage Stage = iota
 	DialogueStage
 	InventoryStage
+	QuestMenuStage
 	MenuStage
 )
 
@@ -63,18 +66,18 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", npcPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	//npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", playerPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 	playerPosition.X++
-	axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize)
+	axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
 	playerPosition.X++
-	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize)
+	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
@@ -83,36 +86,47 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause}),
 	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
 	//})
-	byeReplica := &scriptmanager.PieceDialogue{
-		Replicas: []string{"Bye stranger"},
-	}
 	npc.AddDialogue(&scriptmanager.PieceDialogue{
-		Replicas: []string{"Hello stranger", "Do you want a coin?"},
+		CanStartDialogue: true,
+		Replicas:         []string{"Hello stranger", "Do you want a quest?"},
 		Answers: []scriptmanager.Answer{
 			{
 				Text: "Yes, of course",
 				Action: func() {
-					player.AddCoins(1)
+					player.TakeQuest(quest.NewQuest("First quest", []*quest.Goal{
+						{
+							NeedItems: []quest.NeedItem{
+								{
+									Type:       item.AxeType,
+									NumberNeed: 1,
+								},
+							},
+						},
+					}, func() {
+						player.AddCoins(100)
+					}))
+					player.TakeQuest(quest.NewQuest("One more quest", []*quest.Goal{
+						{
+							NeedItems: []quest.NeedItem{
+								{
+									Type:       item.KeyType,
+									NumberNeed: 1,
+								},
+							},
+						},
+					}, func() {
+						player.AddCoins(50)
+					}))
 				},
-				NextPieceDialogue: byeReplica,
+				NextPieceDialogue: &scriptmanager.PieceDialogue{
+					Replicas: []string{"Bye stranger"},
+				},
 			},
 			{
 				Text: "No",
 				NextPieceDialogue: &scriptmanager.PieceDialogue{
-					Replicas: []string{"Do you want two coins?"},
-					Answers: []scriptmanager.Answer{
-						{
-							Text: "Yes",
-							Action: func() {
-								player.AddCoins(2)
-							},
-							NextPieceDialogue: byeReplica,
-						},
-						{
-							Text:              "No",
-							NextPieceDialogue: byeReplica,
-						},
-					},
+					Replicas:         []string{"Bye stranger, see you"},
+					CanStartDialogue: true,
 				},
 			},
 		},
@@ -131,6 +145,11 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create new face for game ofer face(font): %v", err)
 	}
 
+	questMenu, err := quest.NewQuestsMenu(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init quest menu: %v", err)
+	}
+
 	game := &Game{
 		gameMap:         gameMap,
 		cfg:             cfg,
@@ -143,6 +162,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		gameOverFace:    gameOverFace,
 		items:           []*item.Item{axeItem, keyItem},
 		inventory:       inventory.NewInventory(cfg),
+		questsMenu:      questMenu,
 		stage:           MenuStage,
 	}
 
@@ -254,7 +274,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressedEvent(ebiten.KeySpace, func() {
 		switch game.stage {
 		case GameStage:
-			if utils.CanAction(game.player.Position, game.npc.Position) && !game.npc.DialogueManager.IsEndDialogue() {
+			if utils.CanAction(game.player.Position, game.npc.Position) && game.npc.DialogueManager.CanStartDialogue {
 				game.npc.Trigger()
 				game.stage = DialogueStage
 			}
@@ -268,13 +288,16 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 			if game.npc.DialogueManager.NeedAnswer() {
 				game.npc.DialogueManager.DoAnswer()
 				game.npc.DialogueManager.PieceDialogue = game.npc.DialogueManager.NextPieceDialogue()
-				if game.npc.DialogueManager.IsEndDialogue() {
+				if game.npc.DialogueManager.IsEndDialogue {
 					game.stage = GameStage
 					return
 				}
 				return
 			}
 			game.npc.DialogueManager.NextReplica()
+			if game.npc.DialogueManager.IsEndDialogue {
+				game.stage = GameStage
+			}
 		case MenuStage:
 			game.menu.ClickActiveButton()
 		}
@@ -290,6 +313,17 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 			game.stage = InventoryStage
 		case InventoryStage:
 			game.inventory.OnOff()
+			game.stage = GameStage
+		}
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyQ, func() {
+		switch game.stage {
+		case GameStage:
+			game.questsMenu.OnOff()
+			game.questsMenu.Update(game.player.Quests())
+			game.stage = QuestMenuStage
+		case QuestMenuStage:
+			game.questsMenu.OnOff()
 			game.stage = GameStage
 		}
 	})
@@ -313,7 +347,7 @@ func (game *Game) Update() error {
 	game.camera.UpdatePlayer(game.player.Position)
 	game.camera.UpdateEntity(game.npc.Position)
 
-	game.player.DecreaseSatiety()
+	game.player.Update()
 	return nil
 }
 
@@ -342,6 +376,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	game.npc.Draw(screen)
 	game.player.Draw(screen)
 	game.inventory.Draw(screen)
+	game.questsMenu.Draw(screen)
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
