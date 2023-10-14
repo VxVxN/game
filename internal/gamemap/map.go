@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image"
+	"math"
 )
 
 type Map struct {
@@ -191,7 +192,7 @@ func makeTree(cfg *config.Config, x int, y int, forestTop1 *ebiten.Image, forest
 
 func (gameMap *Map) IsCanMove(x, y float64) bool {
 	for _, layerTiles := range gameMap.layerContainer.Elements() {
-		if layerTiles[int(x)][int(y)].Blocked {
+		if layerTiles[int(math.Round(x))][int(math.Round(y))].Blocked {
 			return false
 		}
 	}
