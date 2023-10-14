@@ -46,6 +46,9 @@ func (item *Item) Trigger() {
 }
 
 func (item *Item) Position() base.Position {
+	if item.isTook {
+		return base.Position{}
+	}
 	return item.position
 }
 

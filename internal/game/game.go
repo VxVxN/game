@@ -10,6 +10,7 @@ import (
 	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/inventory"
 	"github.com/VxVxN/game/pkg/item"
+	"github.com/VxVxN/game/pkg/menu"
 	"github.com/VxVxN/game/pkg/scriptmanager"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -36,6 +37,7 @@ type Game struct {
 	items           []*item.Item
 	inventory       *inventory.Inventory
 	stage           Stage
+	menu            *menu.Menu
 	isShowDebugInfo bool
 }
 
@@ -45,6 +47,7 @@ const (
 	GameStage Stage = iota
 	DialogueStage
 	InventoryStage
+	MenuStage
 )
 
 func NewGame(cfg *config.Config) (*Game, error) {
@@ -140,8 +143,27 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		gameOverFace:    gameOverFace,
 		items:           []*item.Item{axeItem, keyItem},
 		inventory:       inventory.NewInventory(cfg),
-		stage:           GameStage,
+		stage:           MenuStage,
 	}
+
+	menu, err := menu.NewMenu(cfg, []menu.ButtonOptions{
+		{
+			Text: "New game",
+			Action: func() {
+				game.stage = GameStage
+			},
+		},
+		{
+			Text: "Exit",
+			Action: func() {
+				os.Exit(0)
+			},
+		}})
+	if err != nil {
+		return nil, fmt.Errorf("failed new menu: %v", err)
+	}
+
+	game.menu = menu
 
 	game.camera.AddPlayerImage(player.Image())
 	game.camera.AddEntityImage(npc.Image())
@@ -190,6 +212,8 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 		switch game.stage {
 		case DialogueStage:
 			game.npc.DialogueManager.NextAnswer()
+		case MenuStage:
+			game.menu.BeforeMenuItem()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
@@ -205,6 +229,8 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 		switch game.stage {
 		case DialogueStage:
 			game.npc.DialogueManager.BeforeAnswer()
+		case MenuStage:
+			game.menu.NextMenuItem()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
@@ -249,6 +275,8 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				return
 			}
 			game.npc.DialogueManager.NextReplica()
+		case MenuStage:
+			game.menu.ClickActiveButton()
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyTab, func() {
@@ -290,6 +318,12 @@ func (game *Game) Update() error {
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
+	switch game.stage {
+	case MenuStage:
+		game.menu.Draw(screen)
+		return
+	default:
+	}
 	game.camera.Draw(screen)
 
 	if game.isShowDebugInfo {
