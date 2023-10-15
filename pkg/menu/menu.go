@@ -47,14 +47,11 @@ func NewMenu(cfg *config.Config, buttonOptions []ButtonOptions) (*Menu, error) {
 		if i == 0 {
 			y = float64(cfg.Common.WindowHeight / 2)
 		}
-		buttons[i] = label.NewLabel(face)
-		buttons[i].X = 0
-		buttons[i].Y = y
-		buttons[i].Width = float64(cfg.Common.WindowWidth)
-		buttons[i].Height = heightLabel
+		buttons[i] = label.NewLabel(face, 0, y, option.Text)
+		buttons[i].ContainerWidth = float64(cfg.Common.WindowWidth)
+		buttons[i].ContainerHeight = heightLabel
 		buttons[i].AlignVertical = label.AlignVerticalCenter
 		buttons[i].AlignHorizontal = label.AlignHorizontalCenter
-		buttons[i].Text = option.Text
 	}
 	return &Menu{cfg: cfg, buttons: buttons, buttonOptions: buttonOptions}, nil
 }

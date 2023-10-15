@@ -51,14 +51,11 @@ func (manager *DialogueManager) Draw(screen *ebiten.Image, x, y float64) {
 		return
 	}
 
-	replicLabel := label.NewLabel(manager.face)
-	replicLabel.X = 0
-	replicLabel.Y = 0
-	replicLabel.Width = float64(manager.cfg.Common.WindowWidth)
-	replicLabel.Height = y - 32
+	replicLabel := label.NewLabel(manager.face, 0, 0, manager.CurrentReplica())
+	replicLabel.ContainerWidth = float64(manager.cfg.Common.WindowWidth)
+	replicLabel.ContainerHeight = y - 32
 	replicLabel.AlignVertical = label.AlignVerticalBottom
 	replicLabel.AlignHorizontal = label.AlignHorizontalCenter
-	replicLabel.Text = manager.CurrentReplica()
 	//replicLabel.ContainerColor = color.RGBA{R: 100, G: 200, B: 100, A: 160}
 	replicLabel.Draw(screen)
 
@@ -66,21 +63,16 @@ func (manager *DialogueManager) Draw(screen *ebiten.Image, x, y float64) {
 		return
 	}
 
-	answerLabel := label.NewLabel(manager.face)
 	for index, answer := range manager.Answers {
+		answerLabel := label.NewLabel(manager.face, 0, float64(int(y)+32+index*32), answer.Text)
 		answerColor := color.RGBA{R: 0, G: 0, B: 0, A: 255}
 		if manager.IsActiveAnswer(index) {
 			answerColor = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 		}
-		answerLabel.X = 0
-		answerLabel.Y = float64(int(y) + 32 + index*32)
-		answerLabel.Width = float64(manager.cfg.Common.WindowWidth)
-		//answerLabel.Height = y - 32
+		answerLabel.ContainerWidth = float64(manager.cfg.Common.WindowWidth)
 		answerLabel.AlignHorizontal = label.AlignHorizontalCenter
-		answerLabel.Text = answer.Text
 		answerLabel.Color = answerColor
 		answerLabel.Draw(screen)
-
 	}
 }
 

@@ -385,7 +385,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	game.camera.Draw(screen)
 
 	if game.isShowDebugInfo {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %f, Y = %f\nLayers: %d", game.player.Position().X, game.player.Position().Y,
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("x = %f, y = %f\nLayers: %d", game.player.Position().X, game.player.Position().Y,
 			len(game.gameMap.FrontImages())+2)) // +2 -> gameMap.BackgroundImage() + player.Image()
 	}
 

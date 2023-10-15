@@ -43,13 +43,13 @@ const (
 )
 
 type Label struct {
-	X float64
-	Y float64
+	x float64
+	y float64
 
-	Width  float64
-	Height float64
+	ContainerWidth  float64
+	ContainerHeight float64
 
-	Text string
+	text string
 
 	Color          color.RGBA
 	ContainerColor color.RGBA
@@ -70,11 +70,14 @@ type Label struct {
 	lineSpacing float64
 }
 
-func NewLabel(fontFace font.Face) *Label {
+func NewLabel(fontFace font.Face, x, y float64, text string) *Label {
 	m := fontFace.Metrics()
 	capHeight := math.Abs(float64(m.CapHeight.Floor()))
 	lineHeight := float64(m.Height.Floor())
 	return &Label{
+		x:          x,
+		y:          y,
+		text:       text,
 		fontFace:   fontFace,
 		capHeight:  capHeight,
 		lineHeight: lineHeight,
@@ -87,18 +90,18 @@ func (l *Label) Draw(screen *ebiten.Image) {
 	if !l.Visible {
 		return
 	}
-	posX := l.X
-	posY := l.Y + l.capHeight
+	posX := l.x
+	posY := l.y + l.capHeight
 	var (
 		containerX0 float64
 		containerY0 float64
 		containerX1 float64
 		containerY1 float64
 	)
-	bounds := text.BoundString(l.fontFace, l.Text)
+	bounds := text.BoundString(l.fontFace, l.text)
 	boundsWidth := float64(bounds.Dx())
 	boundsHeight := float64(bounds.Dy())
-	if l.Width == 0 && l.Height == 0 {
+	if l.ContainerWidth == 0 && l.ContainerHeight == 0 {
 		// Automatically assigning a work area
 		containerX0 = posX
 		containerY0 = posY
@@ -107,9 +110,9 @@ func (l *Label) Draw(screen *ebiten.Image) {
 	} else {
 		containerX0 = posX
 		containerY0 = posY
-		containerX1 = posX + l.Width
-		containerY1 = posY + l.Height
-		if delta := boundsWidth - l.Width; delta > 0 {
+		containerX1 = posX + l.ContainerWidth
+		containerY1 = posY + l.ContainerHeight
+		if delta := boundsWidth - l.ContainerWidth; delta > 0 {
 			switch l.GrowHorizontal {
 			case GrowHorizontalRight:
 				containerX1 += delta
@@ -118,7 +121,7 @@ func (l *Label) Draw(screen *ebiten.Image) {
 			case GrowHorizontalNone:
 			}
 		}
-		if delta := boundsHeight - l.Height; delta > 0 {
+		if delta := boundsHeight - l.ContainerHeight; delta > 0 {
 			switch l.GrowVertical {
 			case GrowVerticalDown:
 				containerY1 += delta
@@ -140,7 +143,7 @@ func (l *Label) Draw(screen *ebiten.Image) {
 		h := containerHeight
 		ebitenutil.DrawRect(screen, x0, y0, w, h, l.ContainerColor)
 	}
-	numLines := strings.Count(l.Text, "\n") + 1
+	numLines := strings.Count(l.text, "\n") + 1
 	switch l.AlignVertical {
 	case AlignVerticalTop:
 	case AlignVerticalCenter:
@@ -149,7 +152,7 @@ func (l *Label) Draw(screen *ebiten.Image) {
 		posY += containerHeight - l.estimateHeight(numLines)
 	}
 
-	if l.Text == "" {
+	if l.text == "" {
 		return
 	}
 	var opts ebiten.DrawImageOptions
@@ -157,7 +160,7 @@ func (l *Label) Draw(screen *ebiten.Image) {
 
 	if l.AlignHorizontal == AlignHorizontalLeft {
 		opts.GeoM.Translate(posX, posY)
-		text.DrawWithOptions(screen, l.Text, l.fontFace, &opts)
+		text.DrawWithOptions(screen, l.text, l.fontFace, &opts)
 		return
 	}
 	if l.lineSpacing != 1 {
@@ -166,7 +169,7 @@ func (l *Label) Draw(screen *ebiten.Image) {
 	}
 	// We need to process the text line by line, aligning each
 	// a separate line
-	textRemaining := l.Text
+	textRemaining := l.text
 	offsetY := 0.0
 	for {
 		nextLine := strings.IndexByte(textRemaining, '\n')

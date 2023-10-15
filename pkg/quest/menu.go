@@ -57,16 +57,14 @@ func (menu *QuestsMenu) Draw(screen *ebiten.Image) {
 	y := float64(50)
 	ebitenutil.DrawRect(screen, x, y, float64(menu.cfg.Common.WindowWidth-100), float64(menu.cfg.Common.WindowHeight-100), color.RGBA{R: 100, G: 43, B: 43, A: 150})
 	for i, quest := range menu.quests {
-		questLabel := label.NewLabel(menu.face)
-		questLabel.X = x + 10
-		questLabel.Y = y + (float64(i))*54.0 + 10
-		questLabel.Width = float64(menu.cfg.Common.WindowWidth - 100 - 20)
-		questLabel.AlignVertical = label.AlignVerticalCenter
 		var statusQuest string
 		if quest.IsCompleted() {
 			statusQuest = "(completed)"
 		}
-		questLabel.Text = quest.Name + statusQuest + ": \n    " + quest.GoalsDescription()
+		text := quest.Name + statusQuest + ": \n    " + quest.GoalsDescription()
+		questLabel := label.NewLabel(menu.face, x+10, (float64(i))*54.0+10, text)
+		questLabel.ContainerWidth = float64(menu.cfg.Common.WindowWidth - 100 - 20)
+		questLabel.AlignVertical = label.AlignVerticalCenter
 		questLabel.ContainerColor = color.RGBA{R: 100, G: 200, B: 100, A: 160}
 		questLabel.Draw(screen)
 	}
