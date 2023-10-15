@@ -17,8 +17,7 @@ import (
 )
 
 type NPC struct {
-	Entity
-	name            string
+	BaseEntity
 	nameFont        font.Face
 	playerPosition  base.Position
 	cfg             *config.Config
@@ -53,13 +52,13 @@ func NewNPC(name string, position base.Position, speed float64, imagePath string
 	}
 
 	return &NPC{
-		Entity: Entity{
-			Position:  position,
+		BaseEntity: BaseEntity{
+			position:  position,
+			name:      name,
 			xp:        10000,
 			animation: animation,
 			speed:     speed,
 		},
-		name:            name,
 		nameFont:        nameFont,
 		cfg:             cfg,
 		scriptManager:   scriptManager,
@@ -73,7 +72,8 @@ func (npc *NPC) Update(playerPosition base.Position) {
 		return
 	}
 	var action scriptmanager.Action
-	npc.Position, action = npc.scriptManager.Update(npc.Position, npc.speed)
+	position, action := npc.scriptManager.Update(npc.Position(), npc.speed)
+	npc.SetPosition(position)
 	var key ebiten.Key
 	switch action {
 	case scriptmanager.MoveUp:
@@ -92,8 +92,8 @@ func (npc *NPC) Draw(screen *ebiten.Image) {
 	tileSize := float64(npc.cfg.Common.TileSize)
 	windowWidth := float64(npc.cfg.Common.WindowWidth)
 	windowHeight := float64(npc.cfg.Common.WindowHeight)
-	x := tileSize*-npc.playerPosition.X + tileSize*npc.Position.X + windowWidth/2
-	y := tileSize*-npc.playerPosition.Y + tileSize*npc.Position.Y + windowHeight/2
+	x := tileSize*-npc.playerPosition.X + tileSize*npc.Position().X + windowWidth/2
+	y := tileSize*-npc.playerPosition.Y + tileSize*npc.Position().Y + windowHeight/2
 	text.Draw(screen, npc.name, npc.nameFont, int(x+2), int(y), color.Black)
 
 	npc.DialogueManager.Draw(screen, x, y)

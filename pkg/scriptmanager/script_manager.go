@@ -25,7 +25,7 @@ func (manager *ScriptManager) AddScript(script *Script) {
 
 func (manager *ScriptManager) Update(position base.Position, speed float64) (base.Position, Action) {
 	var ok bool
-	var action Action
+	action := Pause
 	newPosition := position
 	for {
 		if manager.currentScript >= len(manager.scripts) {

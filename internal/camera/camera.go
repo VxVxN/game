@@ -3,6 +3,7 @@ package camera
 import (
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
+	"github.com/VxVxN/game/pkg/entity"
 	"github.com/VxVxN/game/pkg/item"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -10,9 +11,8 @@ import (
 type Camera struct {
 	cfg             *config.Config
 	positionPlayer  base.Position
-	positionEntity  []base.Position
 	playerImage     *ebiten.Image
-	entityImage     *ebiten.Image
+	entities        []entity.Entity
 	backgroundImage *ebiten.Image
 	frontImages     []*ebiten.Image
 	zoom            float64
@@ -30,8 +30,8 @@ func (camera *Camera) UpdatePlayer(position base.Position) {
 	camera.positionPlayer = position
 }
 
-func (camera *Camera) UpdateEntity(position base.Position) {
-	camera.positionEntity = []base.Position{position}
+func (camera *Camera) UpdateEntities(entities []entity.Entity) {
+	camera.entities = entities
 }
 
 func (camera *Camera) Draw(screen *ebiten.Image) {
@@ -46,11 +46,14 @@ func (camera *Camera) Draw(screen *ebiten.Image) {
 		tileSize*-camera.positionPlayer.Y+windowHeight/2)
 	screen.DrawImage(camera.backgroundImage, op)
 
-	for _, position := range camera.positionEntity {
+	for _, entity := range camera.entities {
+		if entity.IsDead() {
+			continue
+		}
 		op = &ebiten.DrawImageOptions{GeoM: geoM}
-		op.GeoM.Translate(tileSize*-camera.positionPlayer.X+tileSize*position.X+windowWidth/2,
-			tileSize*-camera.positionPlayer.Y+tileSize*position.Y+windowHeight/2)
-		screen.DrawImage(camera.entityImage, op)
+		op.GeoM.Translate(tileSize*-camera.positionPlayer.X+tileSize*entity.Position().X+windowWidth/2,
+			tileSize*-camera.positionPlayer.Y+tileSize*entity.Position().Y+windowHeight/2)
+		screen.DrawImage(entity.Image(), op)
 	}
 
 	for _, gameItem := range camera.items {
@@ -78,10 +81,6 @@ func (camera *Camera) AddBackgroundImage(image *ebiten.Image) {
 
 func (camera *Camera) AddPlayerImage(image *ebiten.Image) {
 	camera.playerImage = image
-}
-
-func (camera *Camera) AddEntityImage(image *ebiten.Image) {
-	camera.entityImage = image
 }
 
 func (camera *Camera) SetItems(items []*item.Item) {

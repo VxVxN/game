@@ -31,6 +31,7 @@ type Game struct {
 	cfg             *config.Config
 	player          *entity.Player
 	npc             *entity.NPC
+	entities        []entity.Entity
 	eventManager    *eventmanager.EventManager
 	camera          *camera.Camera
 	globalTime      time.Time
@@ -66,18 +67,25 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	//npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", playerPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", npcPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create player: %v", err)
+	}
+	enemy, err := entity.NewEnemy("Monster", playerPosition, 0.1, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, func() {
+		player.AddExperience(10)
+		player.AddCoins(5)
+	}, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 	playerPosition.X++
-	axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
+	axeItem, err := item.NewItem(findPosition(cfg, gameMap), cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
 	playerPosition.X++
-	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
+	keyItem, err := item.NewItem(findPosition(cfg, gameMap), cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
@@ -155,6 +163,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		cfg:             cfg,
 		player:          player,
 		npc:             npc,
+		entities:        []entity.Entity{npc, enemy},
 		globalTime:      time.Now(),
 		isShowDebugInfo: true,
 		eventManager:    eventmanager.NewEventManager(),
@@ -186,7 +195,6 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	game.menu = menu
 
 	game.camera.AddPlayerImage(player.Image())
-	game.camera.AddEntityImage(npc.Image())
 	game.camera.AddBackgroundImage(gameMap.BackgroundImage())
 	game.camera.AddFrontImages(gameMap.FrontImages())
 	game.camera.SetItems([]*item.Item{axeItem, keyItem})
@@ -222,7 +230,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
 		switch game.stage {
 		case GameStage:
-			if !gameMap.IsCanMove(player.Position.X, player.Position.Y-1) {
+			if !gameMap.IsCanMove(player.Position().X, player.Position().Y-1) {
 				return
 			}
 			player.Move(ebiten.KeyUp)
@@ -239,7 +247,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
 		switch game.stage {
 		case GameStage:
-			if !gameMap.IsCanMove(player.Position.X, player.Position.Y+1) {
+			if !gameMap.IsCanMove(player.Position().X, player.Position().Y+1) {
 				return
 			}
 			player.Move(ebiten.KeyDown)
@@ -256,7 +264,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
 		switch game.stage {
 		case GameStage:
-			if !gameMap.IsCanMove(player.Position.X+1, player.Position.Y) {
+			if !gameMap.IsCanMove(player.Position().X+1, player.Position().Y) {
 				return
 			}
 			player.Move(ebiten.KeyRight)
@@ -265,7 +273,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
 		switch game.stage {
 		case GameStage:
-			if !gameMap.IsCanMove(player.Position.X-1, player.Position.Y) {
+			if !gameMap.IsCanMove(player.Position().X-1, player.Position().Y) {
 				return
 			}
 			player.Move(ebiten.KeyLeft)
@@ -274,14 +282,27 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 	game.eventManager.AddPressedEvent(ebiten.KeySpace, func() {
 		switch game.stage {
 		case GameStage:
-			if utils.CanAction(game.player.Position, game.npc.Position) && game.npc.DialogueManager.CanStartDialogue {
+			if utils.CanAction(game.player.Position(), game.npc.Position()) && game.npc.DialogueManager.CanStartDialogue {
 				game.npc.Trigger()
 				game.stage = DialogueStage
 			}
 			for _, item := range game.items {
-				if utils.CanAction(game.player.Position, item.Position()) {
+				if utils.CanAction(game.player.Position(), item.Position()) {
 					item.Trigger()
 					game.player.TakeItem(item)
+				}
+			}
+			for _, e := range game.entities {
+				if e.IsDead() {
+					continue
+				}
+				if enemy, ok := e.(*entity.Enemy); ok {
+					if utils.CanAction(game.player.Position(), e.Position()) {
+						e.DecreaseXP(40)
+					}
+					if e.IsDead() {
+						enemy.GetAward()
+					}
 				}
 			}
 		case DialogueStage:
@@ -337,15 +358,18 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 
 func (game *Game) Update() error {
 	game.eventManager.Update()
-	game.npc.Update(game.player.Position)
+	game.npc.Update(game.player.Position())
+	for _, entity := range game.entities {
+		entity.Update(game.player.Position())
+	}
 	if time.Since(game.globalTime) < time.Second/time.Duration(game.cfg.Common.RefreshRateFramesPerSecond) {
 		return nil
 	}
 	game.globalTime = time.Now()
 
 	game.camera.AddPlayerImage(game.player.Image())
-	game.camera.UpdatePlayer(game.player.Position)
-	game.camera.UpdateEntity(game.npc.Position)
+	game.camera.UpdatePlayer(game.player.Position())
+	game.camera.UpdateEntities(game.entities)
 
 	game.player.Update()
 	return nil
@@ -361,7 +385,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	game.camera.Draw(screen)
 
 	if game.isShowDebugInfo {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %f, Y = %f\nLayers: %d", game.player.Position.X, game.player.Position.Y,
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("X = %f, Y = %f\nLayers: %d", game.player.Position().X, game.player.Position().Y,
 			len(game.gameMap.FrontImages())+2)) // +2 -> gameMap.BackgroundImage() + player.Image()
 	}
 
@@ -374,6 +398,9 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	}
 
 	game.npc.Draw(screen)
+	for _, entity := range game.entities {
+		entity.Draw(screen)
+	}
 	game.player.Draw(screen)
 	game.inventory.Draw(screen)
 	game.questsMenu.Draw(screen)

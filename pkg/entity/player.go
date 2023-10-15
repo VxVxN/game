@@ -17,13 +17,14 @@ import (
 )
 
 type Player struct {
-	Entity
-	satiety int
-	coins   int
-	face    font.Face
-	cfg     *config.Config
-	items   []*item.Item
-	quests  []*quest.Quest
+	BaseEntity
+	satiety    int
+	experience int
+	coins      int
+	face       font.Face
+	cfg        *config.Config
+	items      []*item.Item
+	quests     []*quest.Quest
 }
 
 func NewPlayer(position base.Position, speed float64, x0, y0 int, cfg *config.Config) (*Player, error) {
@@ -46,8 +47,8 @@ func NewPlayer(position base.Position, speed float64, x0, y0 int, cfg *config.Co
 	}
 
 	return &Player{
-		Entity: Entity{
-			Position:  position,
+		BaseEntity: BaseEntity{
+			position:  position,
 			xp:        10000,
 			animation: animation,
 			speed:     speed,
@@ -64,13 +65,13 @@ func (player *Player) Move(key ebiten.Key) {
 	}
 	switch key {
 	case ebiten.KeyUp:
-		player.Position.Y -= player.speed
+		player.SetY(player.Position().Y - player.speed)
 	case ebiten.KeyDown:
-		player.Position.Y += player.speed
+		player.SetY(player.Position().Y + player.speed)
 	case ebiten.KeyLeft:
-		player.Position.X -= player.speed
+		player.SetX(player.Position().X - player.speed)
 	case ebiten.KeyRight:
-		player.Position.X += player.speed
+		player.SetX(player.Position().X + player.speed)
 	default:
 	}
 	player.animation.Update(key)
@@ -82,6 +83,14 @@ func (player *Player) Stand() {
 
 func (player *Player) Satiety() int {
 	return player.satiety / 100
+}
+
+func (player *Player) AddExperience(value int) {
+	player.experience += value
+}
+
+func (player *Player) Experience() int {
+	return player.experience
 }
 
 func (player *Player) Update() {
@@ -108,7 +117,7 @@ func (player *Player) AddCoins(coins int) {
 }
 
 func (player *Player) Draw(screen *ebiten.Image) {
-	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Coins: %d", player.XP(), player.Satiety(), player.coins), player.face, player.cfg.Common.WindowWidth/2-80, 80, color.Black)
+	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Experience: %d, Coins: %d", player.XP(), player.Satiety(), player.Experience(), player.coins), player.face, player.cfg.Common.WindowWidth/2-80, 80, color.Black)
 }
 
 func (player *Player) TakeItem(item *item.Item) {
