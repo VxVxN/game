@@ -7,6 +7,7 @@ import (
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/entity"
+	_interface "github.com/VxVxN/game/pkg/entity/interface"
 	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/inventory"
 	"github.com/VxVxN/game/pkg/item"
@@ -31,7 +32,7 @@ type Game struct {
 	cfg             *config.Config
 	player          *entity.Player
 	npc             *entity.NPC
-	entities        []entity.Entity
+	entities        []_interface.Entity
 	eventManager    *eventmanager.EventManager
 	camera          *camera.Camera
 	globalTime      time.Time
@@ -67,12 +68,13 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
+	baseEntitySpped := 0.1
 	//npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", playerPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	npc, err := entity.NewNPC("Bob", findPosition(cfg, gameMap), baseEntitySpped, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
-	enemy, err := entity.NewEnemy("Monster", findPosition(cfg, gameMap), 0.1, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, func() {
+	enemy, err := entity.NewEnemy("Monster", playerPosition, baseEntitySpped, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, func() {
 		player.AddExperience(10)
 		player.AddCoins(5)
 	}, cfg)
@@ -89,11 +91,35 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
-	//npc.SetScripts([]*scriptmanager.Script{
-	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
-	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.MoveRight, scriptmanager.Pause, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.MoveLeft, scriptmanager.Pause}),
-	//	scriptmanager.NewScript([]scriptmanager.Action{scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.MoveUp, scriptmanager.Pause, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.MoveDown, scriptmanager.Pause}),
+	//enemy.SetScripts([]*scriptmanager.Script{
+	//	scriptmanager.NewScript([]scriptmanager.State{
+	//		scriptmanager.NewMoveRightState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveRightState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveRightState(enemy, baseEntitySpped),
+	//		scriptmanager.NewPauseState(),
+	//		scriptmanager.NewMoveUpState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveUpState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveUpState(enemy, baseEntitySpped),
+	//		scriptmanager.NewPauseState(),
+	//		scriptmanager.NewMoveLeftState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveLeftState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveLeftState(enemy, baseEntitySpped),
+	//		scriptmanager.NewPauseState(),
+	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
+	//		scriptmanager.NewPauseState()}),
+	//	scriptmanager.NewScript([]scriptmanager.State{
+	//		scriptmanager.NewMoveUpState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveUpState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveUpState(enemy, baseEntitySpped),
+	//		scriptmanager.NewPauseState(),
+	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
+	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
+	//		scriptmanager.NewPauseState()}),
 	//})
+	enemy.SetScripts([]*scriptmanager.Script{scriptmanager.NewScript([]scriptmanager.State{scriptmanager.NewFollowForEntityState(enemy, player, baseEntitySpped)})})
 	npc.AddDialogue(&scriptmanager.PieceDialogue{
 		CanStartDialogue: true,
 		Replicas:         []string{"Hello stranger", "Do you want a quest?"},
@@ -163,7 +189,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		cfg:             cfg,
 		player:          player,
 		npc:             npc,
-		entities:        []entity.Entity{npc, enemy},
+		entities:        []_interface.Entity{npc, enemy},
 		globalTime:      time.Now(),
 		isShowDebugInfo: true,
 		eventManager:    eventmanager.NewEventManager(),
@@ -371,7 +397,7 @@ func (game *Game) Update() error {
 	game.camera.UpdatePlayer(game.player.Position())
 	game.camera.UpdateEntities(game.entities)
 
-	game.player.Update()
+	game.player.Update(base.Position{})
 	return nil
 }
 

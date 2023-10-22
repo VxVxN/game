@@ -71,18 +71,16 @@ func (npc *NPC) Update(playerPosition base.Position) {
 	if npc.IsDead() {
 		return
 	}
-	var action scriptmanager.Action
-	position, action := npc.scriptManager.Update(npc.Position(), npc.speed)
-	npc.SetPosition(position)
+	state := npc.scriptManager.Update(npc.Position(), npc.speed)
 	var key ebiten.Key
-	switch action {
-	case scriptmanager.MoveUp:
+	switch state.(type) {
+	case *scriptmanager.MoveUpState:
 		key = ebiten.KeyUp
-	case scriptmanager.MoveDown:
+	case *scriptmanager.MoveDownState:
 		key = ebiten.KeyDown
-	case scriptmanager.MoveLeft:
+	case *scriptmanager.MoveLeftState:
 		key = ebiten.KeyLeft
-	case scriptmanager.MoveRight:
+	case *scriptmanager.MoveRightState:
 		key = ebiten.KeyRight
 	}
 	npc.animation.Update(key)

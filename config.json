@@ -4,7 +4,7 @@
     "windowTitle": "Survival",
     "windowWidth": 1680,
     "windowHeight": 1050,
-    "refreshRateFramesPerSecond": 25,
+    "refreshRateFramesPerSecond": 60,
     "mode": ""
   },
   "player": {

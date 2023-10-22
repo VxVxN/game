@@ -23,20 +23,20 @@ func (manager *ScriptManager) AddScript(script *Script) {
 	manager.scripts = append(manager.scripts, script)
 }
 
-func (manager *ScriptManager) Update(position base.Position, speed float64) (base.Position, Action) {
+func (manager *ScriptManager) Update(position base.Position, speed float64) State {
 	var ok bool
-	action := Pause
-	newPosition := position
+	var state State
+	state = NewPauseState()
 	for {
 		if manager.currentScript >= len(manager.scripts) {
 			break
 		}
 		script := manager.scripts[manager.currentScript]
-		newPosition, action, ok = script.Run(manager.gameMap, position, speed)
+		state, ok = script.Run(manager.gameMap, position)
 		if ok {
 			break
 		}
 		manager.currentScript++
 	}
-	return newPosition, action
+	return state
 }

@@ -6,17 +6,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type Entity interface {
-	IsDead() bool
-	XP() int
-	DecreaseXP(int)
-	Image() *ebiten.Image
-	Position() base.Position
-	SetPosition(position base.Position)
-	Update(playerPosition base.Position)
-	Draw(screen *ebiten.Image)
-}
-
 // BaseEntity base structure for any entity
 type BaseEntity struct {
 	name      string

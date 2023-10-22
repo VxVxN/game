@@ -93,7 +93,7 @@ func (player *Player) Experience() int {
 	return player.experience
 }
 
-func (player *Player) Update() {
+func (player *Player) Update(position base.Position) {
 	if player.IsDead() {
 		return
 	}

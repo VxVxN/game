@@ -3,7 +3,7 @@ package camera
 import (
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
-	"github.com/VxVxN/game/pkg/entity"
+	_interface "github.com/VxVxN/game/pkg/entity/interface"
 	"github.com/VxVxN/game/pkg/item"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -12,7 +12,7 @@ type Camera struct {
 	cfg             *config.Config
 	positionPlayer  base.Position
 	playerImage     *ebiten.Image
-	entities        []entity.Entity
+	entities        []_interface.Entity
 	backgroundImage *ebiten.Image
 	frontImages     []*ebiten.Image
 	zoom            float64
@@ -30,7 +30,7 @@ func (camera *Camera) UpdatePlayer(position base.Position) {
 	camera.positionPlayer = position
 }
 
-func (camera *Camera) UpdateEntities(entities []entity.Entity) {
+func (camera *Camera) UpdateEntities(entities []_interface.Entity) {
 	camera.entities = entities
 }
 

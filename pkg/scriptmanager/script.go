@@ -8,38 +8,29 @@ import (
 type Script struct {
 	currentAction  int
 	durationAction int
-	actions        []Action
+	states         []State
 }
 
-func NewScript(actions []Action) *Script {
-	return &Script{actions: actions}
+func NewScript(states []State) *Script {
+	return &Script{states: states}
 }
 
-func (script *Script) Run(gameMap *gamemap.Map, position base.Position, speed float64) (base.Position, Action, bool) {
-	if script.currentAction >= len(script.actions) {
+func (script *Script) Run(gameMap *gamemap.Map, position base.Position) (State, bool) {
+	if script.currentAction >= len(script.states) {
 		script.currentAction = 0
 	}
-	action := script.actions[script.currentAction]
-	switch action {
-	case MoveUp:
-		position.Y -= speed
-	case MoveDown:
-		position.Y += speed
-	case MoveLeft:
-		position.X -= speed
-	case MoveRight:
-		position.X += speed
-	case Pause:
-	}
+	state := script.states[script.currentAction]
+	state.Do()
+
 	if !gameMap.IsCanMove(position.X, position.Y) {
-		return position, action, false
+		return state, false
 	}
 	if script.durationAction > 10 {
 		script.durationAction = 0
 		script.currentAction++
 	}
 	script.durationAction++
-	return position, action, true
+	return state, true
 }
 
 type Action int

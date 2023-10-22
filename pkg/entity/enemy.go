@@ -80,23 +80,39 @@ func (enemy *Enemy) Update(playerPosition base.Position) {
 	if enemy.IsDead() {
 		return
 	}
-	var action scriptmanager.Action
-	position, action := enemy.scriptManager.Update(enemy.Position(), enemy.speed)
-	enemy.SetPosition(position)
+	oldPosition := enemy.position
+	state := enemy.scriptManager.Update(enemy.Position(), enemy.speed)
 	var key ebiten.Key
-	switch action {
-	case scriptmanager.MoveUp:
+	switch state.(type) {
+	case *scriptmanager.MoveUpState:
 		key = ebiten.KeyUp
-	case scriptmanager.MoveDown:
+	case *scriptmanager.MoveDownState:
 		key = ebiten.KeyDown
-	case scriptmanager.MoveLeft:
+	case *scriptmanager.MoveLeftState:
 		key = ebiten.KeyLeft
-	case scriptmanager.MoveRight:
+	case *scriptmanager.MoveRightState:
 		key = ebiten.KeyRight
+	case *scriptmanager.FollowForEntityState:
+		if oldPosition.Y > enemy.position.Y {
+			key = ebiten.KeyUp
+		}
+		if oldPosition.Y < enemy.position.Y {
+			key = ebiten.KeyDown
+		}
+		if oldPosition.X > enemy.position.X {
+			key = ebiten.KeyLeft
+		}
+		if oldPosition.X < enemy.position.X {
+			key = ebiten.KeyRight
+		}
 	}
 	enemy.animation.Update(key)
 }
 
 func (enemy *Enemy) GetAward() {
 	enemy.rewardCallback()
+}
+
+func (enemy *Enemy) SetScripts(scripts []*scriptmanager.Script) {
+	enemy.scriptManager.SetScripts(scripts)
 }
