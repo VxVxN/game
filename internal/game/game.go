@@ -191,7 +191,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		npc:             npc,
 		entities:        []_interface.Entity{npc, enemy},
 		globalTime:      time.Now(),
-		isShowDebugInfo: true,
+		isShowDebugInfo: false,
 		eventManager:    eventmanager.NewEventManager(),
 		camera:          camera.NewCamera(cfg),
 		gameOverFace:    gameOverFace,
@@ -234,6 +234,9 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		game.player.SetPosition(base.NewPosition(float64(game.cfg.Map.Width)/2.0833*zoom, float64(game.cfg.Map.Height)/2.0833*zoom))
 
 		game.camera.SetZoom(zoom)
+	case config.DeveloperMode:
+		game.stage = GameStage
+		game.isShowDebugInfo = true
 	default:
 	}
 

@@ -8,7 +8,8 @@ import (
 type Mode string
 
 const (
-	ViewMode = "view"
+	ViewMode      = "view"
+	DeveloperMode = "developer"
 )
 
 type Config struct {

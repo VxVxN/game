@@ -5,7 +5,7 @@
     "windowWidth": 1680,
     "windowHeight": 1050,
     "refreshRateFramesPerSecond": 60,
-    "mode": ""
+    "mode": "developer"
   },
   "player": {
     "imagePath": "assets/characters.png",
