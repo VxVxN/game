@@ -6,15 +6,14 @@ import (
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/animation"
 	"github.com/VxVxN/game/pkg/item"
+	"github.com/VxVxN/game/pkg/label"
 	"github.com/VxVxN/game/pkg/quest"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
-	"image/color"
 )
 
 type Player struct {
@@ -127,7 +126,13 @@ func (player *Player) Draw(screen *ebiten.Image) {
 	if player.handItem != nil {
 		handItem = player.handItem.ItemType.String()
 	}
-	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Experience: %d, Coins: %d, Hand: %s", player.XP(), player.Satiety(), player.Experience(), player.coins, handItem), player.face, player.cfg.Common.WindowWidth/2-160, 80, color.Black)
+	text := fmt.Sprintf("XP: %d%%, Satiety: %d%%, Experience: %d, Coins: %d, Hand: %s", player.XP(), player.Satiety(), player.Experience(), player.coins, handItem)
+
+	topLabel := label.NewLabel(player.face, 0, 10, text)
+	topLabel.ContainerWidth = float64(player.cfg.Common.WindowWidth)
+	topLabel.AlignVertical = label.AlignVerticalCenter
+	topLabel.AlignHorizontal = label.AlignHorizontalCenter
+	topLabel.Draw(screen)
 }
 
 func (player *Player) TakeItem(item *item.Item) {
