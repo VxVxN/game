@@ -1,7 +1,6 @@
 package scriptmanager
 
 import (
-	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/gamemap"
 )
 
@@ -23,7 +22,7 @@ func (manager *ScriptManager) AddScript(script *Script) {
 	manager.scripts = append(manager.scripts, script)
 }
 
-func (manager *ScriptManager) Update(position base.Position, speed float64) State {
+func (manager *ScriptManager) Update() State {
 	var ok bool
 	var state State
 	state = NewPauseState()
@@ -32,7 +31,7 @@ func (manager *ScriptManager) Update(position base.Position, speed float64) Stat
 			break
 		}
 		script := manager.scripts[manager.currentScript]
-		state, ok = script.Run(manager.gameMap, position)
+		state, ok = script.Run()
 		if ok {
 			break
 		}

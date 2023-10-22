@@ -88,7 +88,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	playerPosition.X++
 	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create axe item: %v", err)
+		return nil, fmt.Errorf("failed to create key item: %v", err)
 	}
 	//enemy.SetScripts([]*scriptmanager.Script{
 	//	scriptmanager.NewScript([]scriptmanager.State{
@@ -118,7 +118,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	//		scriptmanager.NewMoveDownState(enemy, baseEntitySpped),
 	//		scriptmanager.NewPauseState()}),
 	//})
-	enemy.SetScripts([]*scriptmanager.Script{scriptmanager.NewScript([]scriptmanager.State{scriptmanager.NewFollowForEntityState(enemy, player, baseEntitySpped)})})
+	enemy.SetScripts([]*scriptmanager.Script{scriptmanager.NewScript([]scriptmanager.State{scriptmanager.NewFollowForEntityState(enemy, player, baseEntitySpped, gameMap)})})
 	npc.AddDialogue(&scriptmanager.PieceDialogue{
 		CanStartDialogue: true,
 		Replicas:         []string{"Hello stranger", "Do you want a quest?"},
@@ -400,7 +400,7 @@ func (game *Game) Update() error {
 	game.camera.UpdatePlayer(game.player.Position())
 	game.camera.UpdateEntities(game.entities)
 
-	game.player.Update(base.Position{})
+	game.player.Update()
 	return nil
 }
 

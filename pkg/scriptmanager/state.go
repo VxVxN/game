@@ -1,6 +1,9 @@
 package scriptmanager
 
-import "github.com/VxVxN/game/pkg/entity/interface"
+import (
+	"github.com/VxVxN/game/internal/gamemap"
+	"github.com/VxVxN/game/pkg/entity/interface"
+)
 
 type State interface {
 	Do()
@@ -10,27 +13,29 @@ type FollowForEntityState struct {
 	me          _interface.Entity
 	destination _interface.Entity
 	speed       float64
+	gameMap     *gamemap.Map
 }
 
-func NewFollowForEntityState(me _interface.Entity, destination _interface.Entity, speed float64) *FollowForEntityState {
+func NewFollowForEntityState(me _interface.Entity, destination _interface.Entity, speed float64, gameMap *gamemap.Map) *FollowForEntityState {
 	return &FollowForEntityState{
 		me:          me,
 		destination: destination,
 		speed:       speed,
+		gameMap:     gameMap,
 	}
 }
 
 func (state *FollowForEntityState) Do() {
-	if state.me.Position().X > state.destination.Position().X {
+	if state.me.Position().X > state.destination.Position().X && state.gameMap.IsCanMove(state.me.Position().X-state.speed, state.me.Position().Y) {
 		state.me.SetX(state.me.Position().X - state.speed)
 	}
-	if state.me.Position().X < state.destination.Position().X {
+	if state.me.Position().X < state.destination.Position().X && state.gameMap.IsCanMove(state.me.Position().X+state.speed, state.me.Position().Y) {
 		state.me.SetX(state.me.Position().X + state.speed)
 	}
-	if state.me.Position().Y > state.destination.Position().Y {
+	if state.me.Position().Y > state.destination.Position().Y && state.gameMap.IsCanMove(state.me.Position().X, state.me.Position().Y-state.speed) {
 		state.me.SetY(state.me.Position().Y - state.speed)
 	}
-	if state.me.Position().Y < state.destination.Position().Y {
+	if state.me.Position().Y < state.destination.Position().Y && state.gameMap.IsCanMove(state.me.Position().X, state.me.Position().Y+state.speed) {
 		state.me.SetY(state.me.Position().Y + state.speed)
 	}
 }

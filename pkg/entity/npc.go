@@ -71,7 +71,7 @@ func (npc *NPC) Update(playerPosition base.Position) {
 	if npc.IsDead() {
 		return
 	}
-	state := npc.scriptManager.Update(npc.Position(), npc.speed)
+	state := npc.scriptManager.Update()
 	var key ebiten.Key
 	switch state.(type) {
 	case *scriptmanager.MoveUpState:

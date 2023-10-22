@@ -83,7 +83,7 @@ func (enemy *Enemy) Update(playerPosition base.Position) {
 		return
 	}
 	oldPosition := enemy.position
-	state := enemy.scriptManager.Update(enemy.Position(), enemy.speed)
+	state := enemy.scriptManager.Update()
 	var key ebiten.Key
 	switch state.(type) {
 	case *scriptmanager.MoveUpState:
