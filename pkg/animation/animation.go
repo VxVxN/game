@@ -46,13 +46,13 @@ func (animation *Animation) Update(key ebiten.Key) {
 
 	switch key {
 	case ebiten.KeyUp:
-		y0, y1 = tileSize*3, tileSize*4
+		y0, y1 = animation.y0+(tileSize*3), animation.y0+(tileSize*4)
 	case ebiten.KeyDown:
-		y0, y1 = 0, tileSize
+		y0, y1 = animation.y0, animation.y0+tileSize
 	case ebiten.KeyLeft:
-		y0, y1 = tileSize, tileSize*2
+		y0, y1 = animation.y0+tileSize, animation.y0+tileSize*2
 	case ebiten.KeyRight:
-		y0, y1 = tileSize*2, tileSize*3
+		y0, y1 = animation.y0+tileSize*2, animation.y0+tileSize*3
 	default:
 		x0, y0, x1, y1 = animation.x0, animation.y0, animation.x0+tileSize, animation.y0+tileSize
 	}
