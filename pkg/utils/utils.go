@@ -24,3 +24,7 @@ func CanAction(playerPosition, dstPosition base.Position) bool {
 		int(playerPosition.X) == int(dstPosition.X) && int(playerPosition.Y-1) == int(dstPosition.Y) ||
 		int(playerPosition.X) == int(dstPosition.X) && int(playerPosition.Y) == int(dstPosition.Y)
 }
+
+func DeleteElemSlice[T comparable](slice []T, index int) []T {
+	return append(slice[:index], slice[index+1:]...)
+}

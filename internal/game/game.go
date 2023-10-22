@@ -69,21 +69,17 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	}
 
 	baseEntitySpped := 0.1
-	npc, err := entity.NewNPC("Bob", findPosition(cfg, gameMap), baseEntitySpped, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	playerPosition.Y++
+	npc, err := entity.NewNPC("Bob", playerPosition, baseEntitySpped, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
-	enemy, err := entity.NewEnemy("Monster", playerPosition, baseEntitySpped, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, player, func() {
+	enemy, err := entity.NewEnemy("Monster", findPosition(cfg, gameMap), baseEntitySpped, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, player, func() {
 		player.AddExperience(10)
 		player.AddCoins(5)
 	}, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
-	}
-	playerPosition.X++
-	axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
 	playerPosition.X++
 	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
@@ -130,25 +126,30 @@ func NewGame(cfg *config.Config) (*Game, error) {
 						{
 							NeedItems: []quest.NeedItem{
 								{
-									Type:       item.AxeType,
-									NumberNeed: 1,
-								},
-							},
-						},
-					}, func() {
-						player.AddCoins(100)
-					}))
-					player.TakeQuest(quest.NewQuest("One more quest", []*quest.Goal{
-						{
-							NeedItems: []quest.NeedItem{
-								{
 									Type:       item.KeyType,
 									NumberNeed: 1,
 								},
 							},
 						},
 					}, func() {
-						player.AddCoins(50)
+						player.AddCoins(100)
+						player.DeleteItem(item.KeyType)
+
+						axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
+						if err != nil {
+							panic(err)
+						}
+						player.TakeItem(axeItem)
+						axeItem2, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
+						if err != nil {
+							panic(err)
+						}
+						player.TakeItem(axeItem2)
+						axeItem3, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
+						if err != nil {
+							panic(err)
+						}
+						player.TakeItem(axeItem3)
 					}))
 				},
 				NextPieceDialogue: &scriptmanager.PieceDialogue{
@@ -194,7 +195,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		eventManager:    eventmanager.NewEventManager(),
 		camera:          camera.NewCamera(cfg),
 		gameOverFace:    gameOverFace,
-		items:           []*item.Item{axeItem, keyItem},
+		items:           []*item.Item{keyItem},
 		inventory:       inventory.NewInventory(cfg),
 		questsMenu:      questMenu,
 		stage:           MenuStage,
@@ -222,7 +223,7 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	game.camera.AddPlayerImage(player.Image())
 	game.camera.AddBackgroundImage(gameMap.BackgroundImage())
 	game.camera.AddFrontImages(gameMap.FrontImages())
-	game.camera.SetItems([]*item.Item{axeItem, keyItem})
+	game.camera.SetItems([]*item.Item{keyItem})
 
 	game.addEvents(gameMap, player)
 
@@ -295,6 +296,12 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 			player.Move(ebiten.KeyRight)
 		}
 	})
+	game.eventManager.AddPressedEvent(ebiten.KeyRight, func() {
+		switch game.stage {
+		case InventoryStage:
+			game.inventory.NextItem()
+		}
+	})
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
 		switch game.stage {
 		case GameStage:
@@ -302,6 +309,12 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				return
 			}
 			player.Move(ebiten.KeyLeft)
+		}
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyLeft, func() {
+		switch game.stage {
+		case InventoryStage:
+			game.inventory.BeforeItem()
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeySpace, func() {
@@ -323,7 +336,7 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 				}
 				if enemy, ok := e.(*entity.Enemy); ok {
 					if utils.CanAction(game.player.Position(), e.Position()) {
-						e.DecreaseXP(40)
+						e.DecreaseXP(game.player.Attack())
 					}
 					if e.IsDead() {
 						enemy.GetAward()
@@ -346,6 +359,8 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 			}
 		case MenuStage:
 			game.menu.ClickActiveButton()
+		case InventoryStage:
+			player.TakeItemInHand(game.inventory.GetActiveItem())
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyTab, func() {

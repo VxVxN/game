@@ -11,6 +11,7 @@ type BaseEntity struct {
 	name      string
 	position  base.Position
 	xp        int
+	attack    int
 	animation *animation.Animation
 	speed     float64
 }
@@ -45,4 +46,8 @@ func (entity *BaseEntity) SetX(x float64) {
 
 func (entity *BaseEntity) SetY(y float64) {
 	entity.position.Y = y
+}
+
+func (entity *BaseEntity) Attack() int {
+	return entity.attack
 }

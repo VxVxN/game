@@ -7,6 +7,7 @@ import (
 	"github.com/VxVxN/game/pkg/animation"
 	"github.com/VxVxN/game/pkg/item"
 	"github.com/VxVxN/game/pkg/quest"
+	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -24,6 +25,7 @@ type Player struct {
 	face       font.Face
 	cfg        *config.Config
 	items      []*item.Item
+	handItem   *item.Item
 	quests     []*quest.Quest
 }
 
@@ -107,6 +109,10 @@ func (player *Player) Update(position base.Position) {
 	for _, quest := range player.quests {
 		quest.UpdateProgress(player.items)
 	}
+
+	if player.handItem != nil && player.handItem.ItemType == item.AxeType {
+		player.attack = 40
+	}
 }
 
 func (player *Player) AddCoins(coins int) {
@@ -117,7 +123,11 @@ func (player *Player) AddCoins(coins int) {
 }
 
 func (player *Player) Draw(screen *ebiten.Image) {
-	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Experience: %d, Coins: %d", player.XP(), player.Satiety(), player.Experience(), player.coins), player.face, player.cfg.Common.WindowWidth/2-80, 80, color.Black)
+	handItem := "nothing"
+	if player.handItem != nil {
+		handItem = player.handItem.ItemType.String()
+	}
+	text.Draw(screen, fmt.Sprintf("XP: %d%%, Satiety: %d%%, Experience: %d, Coins: %d, Hand: %s", player.XP(), player.Satiety(), player.Experience(), player.coins, handItem), player.face, player.cfg.Common.WindowWidth/2-160, 80, color.Black)
 }
 
 func (player *Player) TakeItem(item *item.Item) {
@@ -125,6 +135,26 @@ func (player *Player) TakeItem(item *item.Item) {
 		return
 	}
 	player.items = append(player.items, item)
+}
+
+func (player *Player) TakeItemInHand(item *item.Item) {
+	if player.IsDead() {
+		return
+	}
+	player.handItem = item
+}
+
+func (player *Player) DeleteItem(ItemType item.ItemType) {
+	if player.IsDead() {
+		return
+	}
+
+	for i, item := range player.items {
+		if item.ItemType == ItemType {
+			player.items = utils.DeleteElemSlice(player.items, i)
+			return
+		}
+	}
 }
 
 func (player *Player) Items() []*item.Item {
