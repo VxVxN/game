@@ -51,13 +51,6 @@ func NewChunk(chunkSize, treePerlinSeed, waterPerlinSeed int, idChunk base.Posit
 	return chunk
 }
 
-func Abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func fillWaterGaps(chunkMap map[int]map[int]TileType, chunkMax int) {
 	for x := 0; x < chunkMax; x++ {
 		var firstWaterIndex int
@@ -69,7 +62,7 @@ func fillWaterGaps(chunkMap map[int]map[int]TileType, chunkMax int) {
 				firstWaterIndex = y
 				continue
 			}
-			if Abs(firstWaterIndex-y) > 20 {
+			if math.Abs(float64(firstWaterIndex-y)) > 20 {
 				firstWaterIndex = y
 				continue
 			}
@@ -89,7 +82,7 @@ func fillWaterGaps(chunkMap map[int]map[int]TileType, chunkMax int) {
 				firstWaterIndex = x
 				continue
 			}
-			if Abs(firstWaterIndex-x) > 20 {
+			if math.Abs(float64(firstWaterIndex-x)) > 20 {
 				firstWaterIndex = x
 				continue
 			}

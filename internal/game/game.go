@@ -67,12 +67,12 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 
-	npcPosition := findPosition(cfg, gameMap)
-	npc, err := entity.NewNPC("Bob", npcPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
+	//npcPosition := findPosition(cfg, gameMap)
+	npc, err := entity.NewNPC("Bob", playerPosition, 0.1, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
-	enemy, err := entity.NewEnemy("Monster", playerPosition, 0.1, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, func() {
+	enemy, err := entity.NewEnemy("Monster", findPosition(cfg, gameMap), 0.1, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, func() {
 		player.AddExperience(10)
 		player.AddCoins(5)
 	}, cfg)
@@ -80,12 +80,12 @@ func NewGame(cfg *config.Config) (*Game, error) {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
 	playerPosition.X++
-	axeItem, err := item.NewItem(findPosition(cfg, gameMap), cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
+	axeItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 160, 4192, cfg.Common.TileSize, item.AxeType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
 	playerPosition.X++
-	keyItem, err := item.NewItem(findPosition(cfg, gameMap), cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
+	keyItem, err := item.NewItem(playerPosition, cfg.Map.TileSetPath, 224, 4192, cfg.Common.TileSize, item.KeyType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create axe item: %v", err)
 	}
@@ -203,9 +203,9 @@ func NewGame(cfg *config.Config) (*Game, error) {
 
 	switch game.cfg.Common.Mode {
 	case config.ViewMode:
-		//zoom := 0.3
-		//zoom := 0.15
-		zoom := 1.0
+		zoom := 0.2
+		// 2.0833 calculation constant for aligning a map of any size based on zoom
+		game.player.SetPosition(base.NewPosition(float64(game.cfg.Map.Width)/2.0833*zoom, float64(game.cfg.Map.Height)/2.0833*zoom))
 
 		game.camera.SetZoom(zoom)
 	default:

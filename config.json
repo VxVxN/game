@@ -5,15 +5,15 @@
     "windowWidth": 1680,
     "windowHeight": 1050,
     "refreshRateFramesPerSecond": 25,
-    "mode": "view"
+    "mode": ""
   },
   "player": {
     "imagePath": "assets/characters.png",
     "frameCount": 3
   },
   "map": {
-    "width": 100,
-    "height": 100,
+    "width": 150,
+    "height": 150,
     "tileSetPath": "assets/tileset/[Base]BaseChip_pipo.png"
   }
 }

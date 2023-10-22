@@ -69,7 +69,7 @@ func NewMap(cfg *config.Config) (*Map, error) {
 	forestBottom2 := tileSet.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
 
 	coord := base.Position{Y: 1, X: 1}
-	chunk := utils.NewChunk(cfg.Map.Width, 40, 120, coord)
+	chunk := utils.NewChunk(cfg.Map.Width, 40, 80, coord)
 
 	gameMap := &Map{
 		cfg:             cfg,
