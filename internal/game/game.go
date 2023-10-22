@@ -389,7 +389,12 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyEscape, func() {
-		os.Exit(0) // todo add normal game end processing
+		switch game.stage {
+		case MenuStage:
+			game.stage = GameStage
+		default:
+			game.stage = MenuStage
+		}
 	})
 	game.eventManager.SetDefaultEvent(func() {
 		player.Stand()
