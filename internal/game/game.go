@@ -400,7 +400,7 @@ func (game *Game) Update() error {
 	game.camera.UpdatePlayer(game.player.Position())
 	game.camera.UpdateEntities(game.entities)
 
-	game.player.Update()
+	game.player.Update(base.Position{})
 	return nil
 }
 
