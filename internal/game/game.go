@@ -69,12 +69,11 @@ func NewGame(cfg *config.Config) (*Game, error) {
 	}
 
 	baseEntitySpped := 0.1
-	//npcPosition := findPosition(cfg, gameMap)
 	npc, err := entity.NewNPC("Bob", findPosition(cfg, gameMap), baseEntitySpped, cfg.Player.ImagePath, 96, 128, cfg.Player.FrameCount, gameMap, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %v", err)
 	}
-	enemy, err := entity.NewEnemy("Monster", playerPosition, baseEntitySpped, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, func() {
+	enemy, err := entity.NewEnemy("Monster", playerPosition, baseEntitySpped, cfg.Player.ImagePath, 0, 128, cfg.Player.FrameCount, gameMap, player, func() {
 		player.AddExperience(10)
 		player.AddCoins(5)
 	}, cfg)
@@ -384,14 +383,18 @@ func (game *Game) addEvents(gameMap *gamemap.Map, player *entity.Player) {
 
 func (game *Game) Update() error {
 	game.eventManager.Update()
-	game.npc.Update(game.player.Position())
-	for _, entity := range game.entities {
-		entity.Update(game.player.Position())
+	if game.stage != GameStage {
+		return nil
 	}
+	game.npc.Update(game.player.Position())
 	if time.Since(game.globalTime) < time.Second/time.Duration(game.cfg.Common.RefreshRateFramesPerSecond) {
 		return nil
 	}
 	game.globalTime = time.Now()
+
+	for _, entity := range game.entities {
+		entity.Update(game.player.Position())
+	}
 
 	game.camera.AddPlayerImage(game.player.Image())
 	game.camera.UpdatePlayer(game.player.Position())

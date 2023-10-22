@@ -32,13 +32,3 @@ func (script *Script) Run(gameMap *gamemap.Map, position base.Position) (State, 
 	script.durationAction++
 	return state, true
 }
-
-type Action int
-
-const (
-	MoveUp Action = iota
-	MoveDown
-	MoveLeft
-	MoveRight
-	Pause
-)

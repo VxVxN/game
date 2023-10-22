@@ -7,6 +7,7 @@ import (
 	"github.com/VxVxN/game/internal/gamemap"
 	"github.com/VxVxN/game/pkg/animation"
 	"github.com/VxVxN/game/pkg/scriptmanager"
+	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -20,13 +21,14 @@ import (
 type Enemy struct {
 	BaseEntity
 	nameFont       font.Face
-	playerPosition base.Position
+	player         *Player
 	cfg            *config.Config
 	scriptManager  *scriptmanager.ScriptManager
 	rewardCallback func()
+	delayAttack    int
 }
 
-func NewEnemy(name string, position base.Position, speed float64, imagePath string, x0, y0, framesCount int, gameMap *gamemap.Map, rewardCallback func(), cfg *config.Config) (*Enemy, error) {
+func NewEnemy(name string, position base.Position, speed float64, imagePath string, x0, y0, framesCount int, gameMap *gamemap.Map, player *Player, rewardCallback func(), cfg *config.Config) (*Enemy, error) {
 	animation, err := animation.NewAnimation(imagePath, x0, y0, framesCount, cfg.Common.TileSize)
 	if err != nil {
 		return nil, err
@@ -58,6 +60,7 @@ func NewEnemy(name string, position base.Position, speed float64, imagePath stri
 		nameFont:       nameFont,
 		cfg:            cfg,
 		scriptManager:  scriptManager,
+		player:         player,
 		rewardCallback: rewardCallback,
 	}, nil
 }
@@ -69,14 +72,13 @@ func (enemy *Enemy) Draw(screen *ebiten.Image) {
 	tileSize := float64(enemy.cfg.Common.TileSize)
 	windowWidth := float64(enemy.cfg.Common.WindowWidth)
 	windowHeight := float64(enemy.cfg.Common.WindowHeight)
-	x := tileSize*-enemy.playerPosition.X + tileSize*enemy.Position().X + windowWidth/2
-	y := tileSize*-enemy.playerPosition.Y + tileSize*enemy.Position().Y + windowHeight/2
+	x := tileSize*-enemy.player.Position().X + tileSize*enemy.Position().X + windowWidth/2
+	y := tileSize*-enemy.player.Position().Y + tileSize*enemy.Position().Y + windowHeight/2
 	text.Draw(screen, enemy.name, enemy.nameFont, int(x+2), int(y)-15, color.Black)
 	text.Draw(screen, "XP "+strconv.Itoa(enemy.XP()), enemy.nameFont, int(x+2), int(y), color.Black)
 }
 
 func (enemy *Enemy) Update(playerPosition base.Position) {
-	enemy.playerPosition = playerPosition
 	if enemy.IsDead() {
 		return
 	}
@@ -107,6 +109,12 @@ func (enemy *Enemy) Update(playerPosition base.Position) {
 		}
 	}
 	enemy.animation.Update(key)
+
+	if utils.CanAction(enemy.player.Position(), enemy.Position()) && enemy.delayAttack > 50 {
+		enemy.player.DecreaseXP(10)
+		enemy.delayAttack = 0
+	}
+	enemy.delayAttack++
 }
 
 func (enemy *Enemy) GetAward() {
