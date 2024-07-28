@@ -1,11 +1,12 @@
 package inventory
 
 import (
+	"image/color"
+
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/item"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image/color"
 )
 
 type Inventory struct {

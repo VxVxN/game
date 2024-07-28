@@ -1,10 +1,11 @@
 package item
 
 import (
+	"image"
+
 	"github.com/VxVxN/game/internal/base"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image"
 )
 
 type Item struct {

@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/VxVxN/game/internal/base"
 	"math"
+
+	"github.com/VxVxN/game/internal/base"
 )
 
 type TileType int

@@ -1,13 +1,14 @@
 package label
 
 import (
+	"image/color"
+	"math"
+	"strings"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
-	"image/color"
-	"math"
-	"strings"
 )
 
 type AlignVertical uint8

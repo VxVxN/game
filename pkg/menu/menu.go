@@ -2,12 +2,13 @@ package menu
 
 import (
 	"fmt"
+	"image/color"
+	"os"
+
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/label"
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/font/opentype"
-	"image/color"
-	"os"
 )
 
 type Menu struct {

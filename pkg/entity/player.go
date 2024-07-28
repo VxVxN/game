@@ -2,6 +2,7 @@ package entity
 
 import (
 	"fmt"
+
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/animation"

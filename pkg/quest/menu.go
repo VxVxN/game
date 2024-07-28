@@ -2,14 +2,15 @@ package quest
 
 import (
 	"fmt"
+	"image/color"
+	"os"
+
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/label"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
-	"image/color"
-	"os"
 )
 
 type QuestsMenu struct {

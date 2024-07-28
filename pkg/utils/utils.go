@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/VxVxN/game/internal/base"
 	"math/rand"
+
+	"github.com/VxVxN/game/internal/base"
 )
 
 func RandomIntByRange(min, max int) int {

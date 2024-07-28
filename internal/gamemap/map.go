@@ -2,13 +2,14 @@ package gamemap
 
 import (
 	"fmt"
+	"image"
+	"math"
+
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/pkg/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image"
-	"math"
 )
 
 type Map struct {

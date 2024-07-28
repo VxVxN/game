@@ -2,6 +2,8 @@ package entity
 
 import (
 	"fmt"
+	"image/color"
+
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/config"
 	"github.com/VxVxN/game/internal/gamemap"
@@ -13,7 +15,6 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
-	"image/color"
 )
 
 type NPC struct {

@@ -2,6 +2,10 @@ package game
 
 import (
 	"fmt"
+	"image/color"
+	"os"
+	"time"
+
 	"github.com/VxVxN/game/internal/base"
 	"github.com/VxVxN/game/internal/camera"
 	"github.com/VxVxN/game/internal/config"
@@ -22,9 +26,6 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
-	"image/color"
-	"os"
-	"time"
 )
 
 type Game struct {
